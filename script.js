@@ -171,10 +171,10 @@ class MoneyLendingManager {
                         errorMessage = 'Multiple sign-in attempts too quickly, or popup already open.';
                         break;
                     case 'auth/popup-blocked':
-                        errorMessage = 'Browser blocked the sign-in popup. Please allow pop-ups for this site.';
+                        errorMessage += 'Browser blocked the sign-in popup. Please allow pop-ups for this site.';
                         break;
                     case 'auth/network-request-failed':
-                        errorMessage = 'Network error. Check your internet connection.';
+                        errorMessage += 'Network error. Check your internet connection.';
                         break;
                     case 'auth/operation-not-allowed':
                         errorMessage = 'Google Sign-In is not enabled in your Firebase project. Please enable it in Firebase Console -> Authentication -> Sign-in method.';
@@ -406,27 +406,29 @@ class MoneyLendingManager {
                 return;
             }
 
-            // Get a reference to the Firestore collection for the current user's records
             const recordsCollectionRef = window.firebase.collection(window.firebase.db, `artifacts/${window.firebase.appId}/users/${window.userId}/records`);
-            const batch = window.firebase.writeBatch(window.firebase.db); // Initialize a new Firestore batch
-
+            const BATCH_SIZE = 499; // Max 500 operations per batch, leave one for safety
             let uploadedCount = 0;
-            for (const row of data) {
-                // Prepare record data, ensuring 'paid' status is 'yes' or 'no'
-                const record = {
-                    name: String(row.Name || row.name || '').trim(), // Ensure name is string and trimmed
-                    amount: parseFloat(row.Amount || row.amount || 0), // Ensure amount is a number
-                    paid: (String(row.Paid || row.paid || row['Paid Back'] || '')).toLowerCase() === 'yes' ? 'yes' : 'no',
-                    timestamp: new Date(), // Add a timestamp for ordering/tracking
-                };
 
-                // Create a new document reference and add it to the batch
-                const newDocRef = window.firebase.doc(recordsCollectionRef);
-                batch.set(newDocRef, record); // Add the set operation to the batch
-                uploadedCount++;
+            // Process data in chunks
+            for (let i = 0; i < data.length; i += BATCH_SIZE) {
+                const chunk = data.slice(i, i + BATCH_SIZE);
+                const batch = window.firebase.writeBatch(window.firebase.db); // New batch for each chunk
+
+                for (const row of chunk) {
+                    const record = {
+                        name: String(row.Name || row.name || '').trim(),
+                        amount: parseFloat(row.Amount || row.amount || 0),
+                        paid: (String(row.Paid || row.paid || row['Paid Back'] || '')).toLowerCase() === 'yes' ? 'yes' : 'no',
+                        timestamp: new Date(),
+                    };
+                    const newDocRef = window.firebase.doc(recordsCollectionRef);
+                    batch.set(newDocRef, record);
+                    uploadedCount++;
+                }
+                await batch.commit(); // Commit each batch
+                this.showStatus(`Uploading... processed ${uploadedCount} of ${data.length} records.`, 'loading');
             }
-
-            await batch.commit(); // Commit the batch of write operations to Firestore
 
             this.showStatus(`Successfully uploaded ${uploadedCount} records!`, 'success');
             fileInput.value = ''; // Clear the file input field
