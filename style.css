@@ -322,6 +322,24 @@ h2 {
     cursor: not-allowed;
 }
 
+/* NEW: Style for Mark as Pending button */
+.mark-pending-btn {
+    background: #607d8b; /* Blue-grey color for pending/revert action */
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s;
+    font-family: inherit;
+}
+
+.mark-pending-btn:hover {
+    background: #455a64; /* Darker blue-grey on hover */
+}
+
+
 /* Styling for the upload/status message div */
 #uploadStatus {
     margin-top: 15px;

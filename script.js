@@ -23,8 +23,8 @@ class MoneyLendingManager {
         const fileInput = document.getElementById('fileInput');
         const searchInput = document.getElementById('searchInput');
         const clearAllDataBtn = document.getElementById('clearAllDataBtn');
-        const signInGoogleBtn = document.getElementById('signInGoogleBtn'); // New button
-        const signOutBtn = document.getElementById('signOutBtn');           // New button
+        const signInGoogleBtn = document.getElementById('signInGoogleBtn');
+        const signOutBtn = document.getElementById('signOutBtn');
 
         // Event listener for the upload button
         uploadBtn.addEventListener('click', () => this.uploadFile());
@@ -73,6 +73,7 @@ class MoneyLendingManager {
             signInGoogleBtn.style.display = 'none';
             signOutBtn.style.display = 'inline-block';
             userIdDisplay.textContent = `User: ${user.email || 'Guest User'}`; // Display email if available, else "Guest User"
+            console.log("UI updated: Logged in state.");
         } else { // User is logged out
             authenticatedContent.style.display = 'none';
             notAuthenticatedMessage.style.display = 'block';
@@ -85,6 +86,9 @@ class MoneyLendingManager {
             if (this.unsubscribe) {
                 this.unsubscribe(); // Stop listening for data
                 this.unsubscribe = null;
+                console.log("UI updated: Logged out state. Firestore listener unsubscribed.");
+            } else {
+                console.log("UI updated: Logged out state.");
             }
         }
     }
@@ -95,16 +99,44 @@ class MoneyLendingManager {
     async handleGoogleSignIn() {
         if (!window.firebase.auth) {
             this.showStatus('Firebase Auth not initialized. Please check your Firebase config.', 'error');
+            console.error("handleGoogleSignIn: window.firebase.auth is null.");
             return;
         }
         try {
+            console.log("Attempting Google Sign-In popup...");
             const provider = new window.firebase.GoogleAuthProvider();
-            await window.firebase.signInWithPopup(window.firebase.auth, provider);
+            const result = await window.firebase.signInWithPopup(window.firebase.auth, provider);
+            console.log("Google Sign-In successful!", result.user);
             this.showStatus('Signed in with Google successfully!', 'success');
             // onAuthStateChanged listener will handle UI update and data loading
         } catch (error) {
             console.error("Error during Google Sign-In:", error);
-            this.showStatus(`Google Sign-In failed: ${error.message}`, 'error');
+            let errorMessage = "An unknown error occurred.";
+            if (error.code) {
+                errorMessage = `Error Code: ${error.code}. `;
+                switch (error.code) {
+                    case 'auth/popup-closed-by-user':
+                        errorMessage += 'Sign-in popup was closed.';
+                        break;
+                    case 'auth/cancelled-popup-request':
+                        errorMessage += 'Multiple sign-in attempts too quickly, or popup already open.';
+                        break;
+                    case 'auth/popup-blocked':
+                        errorMessage += 'Browser blocked the sign-in popup. Please allow pop-ups for this site.';
+                        break;
+                    case 'auth/network-request-failed':
+                        errorMessage += 'Network error. Check your internet connection.';
+                        break;
+                    case 'auth/operation-not-allowed':
+                        errorMessage += 'Google Sign-In is not enabled in your Firebase project. Please enable it in Firebase Console -> Authentication -> Sign-in method.';
+                        break;
+                    default:
+                        errorMessage += error.message;
+                }
+            } else {
+                errorMessage = error.message;
+            }
+            this.showStatus(`Google Sign-In failed: ${errorMessage}`, 'error');
         }
     }
 
@@ -114,10 +146,13 @@ class MoneyLendingManager {
     async handleSignOut() {
         if (!window.firebase.auth) {
             this.showStatus('Firebase Auth not initialized.', 'error');
+            console.error("handleSignOut: window.firebase.auth is null.");
             return;
         }
         try {
+            console.log("Attempting to sign out...");
             await window.firebase.signOut(window.firebase.auth);
+            console.log("Sign out successful.");
             this.showStatus('Signed out successfully!', 'success');
             // onAuthStateChanged listener will handle UI update and data clearing
         } catch (error) {
@@ -257,7 +292,7 @@ class MoneyLendingManager {
     loadRecords() {
         // Only load records if Firebase is ready and a user is logged in
         if (!window.isAuthReady || !window.db || !window.userId) {
-            console.log("Firebase not ready or no user logged in for loading records.");
+            console.log("loadRecords: Firebase not ready or no user logged in. Clearing local records and UI.");
             this.records = []; // Ensure records are cleared if not logged in
             this.displayAllRecords();
             this.updateStatistics();
@@ -267,6 +302,7 @@ class MoneyLendingManager {
         // Unsubscribe from any previous real-time listener to prevent multiple listeners
         if (this.unsubscribe) {
             this.unsubscribe();
+            console.log("loadRecords: Unsubscribed from previous Firestore listener.");
         }
 
         // Get a reference to the user's records collection
@@ -274,13 +310,14 @@ class MoneyLendingManager {
         const q = window.firebase.query(recordsCollectionRef); // Create a query (can add orderBy, where clauses here)
 
         // Set up a real-time listener using onSnapshot
+        console.log("loadRecords: Setting up new Firestore listener for user:", window.userId);
         this.unsubscribe = window.firebase.onSnapshot(q, (snapshot) => {
             this.records = []; // Clear current records
             snapshot.forEach((doc) => {
                 // Add each document's data and its ID to the records array
                 this.records.push({ id: doc.id, ...doc.data() });
             });
-            console.log("Records loaded/updated from Firestore:", this.records.length);
+            console.log("Firestore snapshot received. Records loaded:", this.records.length);
             this.displayAllRecords(); // Update the displayed list
             this.updateStatistics(); // Update summary statistics
         }, (error) => {
@@ -367,6 +404,23 @@ class MoneyLendingManager {
         const statusClass = record.paid === 'yes' ? 'status-paid' : 'status-pending';
         const statusText = record.paid === 'yes' ? 'Paid' : 'Pending';
 
+        let actionButtonHTML = '';
+        if (record.paid !== 'yes') {
+            // If status is pending, show "Mark as Paid" button
+            actionButtonHTML = `
+                <button class="mark-paid-btn" onclick="moneyManager.markAsPaid('${record.id}')">
+                    Mark as Paid
+                </button>
+            `;
+        } else {
+            // If status is paid, show "Mark as Pending" button
+            actionButtonHTML = `
+                <button class="mark-pending-btn" onclick="moneyManager.markAsPending('${record.id}')">
+                    Mark as Pending
+                </button>
+            `;
+        }
+
         return `
             <div class="${containerClass}">
                 <div class="record-info">
@@ -375,11 +429,7 @@ class MoneyLendingManager {
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <span class="record-status ${statusClass}">${statusText}</span>
-                    ${record.paid !== 'yes' ? `
-                        <button class="mark-paid-btn" onclick="moneyManager.markAsPaid('${record.id}')">
-                            Mark as Paid
-                        </button>
-                    ` : ''}
+                    ${actionButtonHTML}
                 </div>
             </div>
         `;
@@ -397,15 +447,43 @@ class MoneyLendingManager {
         const recordRef = window.firebase.doc(window.firebase.db, `artifacts/${window.firebase.appId}/users/${window.userId}/records`, recordId);
 
         try {
+            console.log("Attempting to mark record as paid:", recordId);
             // Update the 'paid' field to 'yes'
             await window.firebase.updateDoc(recordRef, {
                 paid: 'yes'
             });
+            console.log("Record marked as paid successfully:", recordId);
             this.showStatus(`Record marked as paid!`, 'success');
             // The onSnapshot listener will automatically re-load and update the UI
         } catch (error) {
+            console.error('Error updating record to paid:', error);
             this.showStatus('Error updating record: ' + error.message, 'error');
-            console.error('Mark paid error:', error);
+        }
+    }
+
+    // Marks a specific record as pending in Firestore (new function)
+    async markAsPending(recordId) {
+        // Ensure Firebase is ready and user is logged in
+        if (!window.db || !window.userId) {
+            this.showStatus('Please sign in to update records.', 'error');
+            return;
+        }
+
+        // Get a reference to the specific document to update
+        const recordRef = window.firebase.doc(window.firebase.db, `artifacts/${window.firebase.appId}/users/${window.userId}/records`, recordId);
+
+        try {
+            console.log("Attempting to mark record as pending:", recordId);
+            // Update the 'paid' field to 'no'
+            await window.firebase.updateDoc(recordRef, {
+                paid: 'no'
+            });
+            console.log("Record marked as pending successfully:", recordId);
+            this.showStatus(`Record marked as pending!`, 'info'); // Use 'info' for a neutral status
+            // The onSnapshot listener will automatically re-load and update the UI
+        } catch (error) {
+            console.error('Error updating record to pending:', error);
+            this.showStatus('Error updating record: ' + error.message, 'error');
         }
     }
 

@@ -21,21 +21,21 @@
         window.isAuthReady = false;
         window.currentUserEmail = "Not Signed In"; // To display user's email
 
-        // IMPORTANT: REPLACE THESE PLACEHOLDER VALUES WITH YOUR ACTUAL FIREBASE PROJECT CONFIGURATION!
-        // You can find this in your Firebase Console -> Project settings -> Your apps -> Web app
+        // Firebase project configuration (YOUR CREDENTIALS ARE NOW HERE)
         const firebaseConfig = {
-          apiKey: "AIzaSyDhL-4ajbXCjijsciUgRa0liC62lpvakrU", // <--- REPLACE THIS
-          authDomain: "moneylendingapp-776c6.firebaseapp.com", // <--- REPLACE THIS
-          projectId: "moneylendingapp-776c6",   // <--- REPLACE THIS
+          apiKey: "AIzaSyDhL-4ajbXCjijsciUgRa0liC62lpvakrU",
+          authDomain: "moneylendingapp-776c6.firebaseapp.com",
+          projectId: "moneylendingapp-776c6",
           storageBucket: "moneylendingapp-776c6.firebasestorage.app",
           messagingSenderId: "1047951189125",
-          appId: "1:1047951189125:web:64e16139e7edfdd63bf5ec"
+          appId: "1:1047951189125:web:64e16139e7edfdd63bf5ec",
         };
+        
         // Use Firebase app ID for unique collection paths, fallback for local testing
         const appId = firebaseConfig.appId || 'default-app-id';
 
-        // Initialize Firebase only if the configuration is valid (i.e., not still using placeholders)
-        if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+        // Initialize Firebase only if the configuration is valid
+        if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey !== "YOUR_API_KEY") { // Check if config is actually set
             window.firebaseApp = initializeApp(firebaseConfig);
             window.db = getFirestore(window.firebaseApp);
             window.auth = getAuth(window.firebaseApp);
@@ -46,27 +46,29 @@
                     // User is signed in (could be anonymous or Google)
                     window.userId = user.uid;
                     window.currentUserEmail = user.email || "Guest User"; // Display email if available, else "Guest User"
-                    console.log("Firebase Auth Ready. User ID:", window.userId, "Email:", window.currentUserEmail);
+                    console.log("Firebase Auth State Changed: User signed in. UID:", window.userId, "Email:", window.currentUserEmail);
                 } else {
                     // No user is signed in
                     window.userId = null; // No user ID when logged out
                     window.currentUserEmail = "Not Signed In";
-                    console.log("No user signed in.");
+                    console.log("Firebase Auth State Changed: No user signed in.");
                     // For Canvas environment, try custom token or anonymous sign-in
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         try {
+                            console.log("Attempting Canvas custom token sign-in...");
                             await signInWithCustomToken(window.auth, __initial_auth_token);
                             window.userId = window.auth.currentUser.uid;
                             window.currentUserEmail = window.auth.currentUser.email || "Canvas User";
-                            console.log("Signed in with custom token. User ID:", window.userId);
+                            console.log("Canvas custom token sign-in successful. User ID:", window.userId);
                         } catch (error) {
-                            console.error("Error with custom token sign-in:", error);
+                            console.error("Error with Canvas custom token sign-in:", error);
                             window.userId = crypto.randomUUID(); // Fallback
                             window.currentUserEmail = "Error User";
                         }
                     } else {
                         // If not in Canvas, and no user, userId remains null.
                         // The UI will reflect "Not Signed In" and hide content.
+                        console.log("Not in Canvas environment and no user logged in. Waiting for explicit sign-in.");
                     }
                 }
                 window.isAuthReady = true; // Mark authentication as ready
@@ -79,11 +81,11 @@
         } else {
             console.warn("Firebase configuration is missing or incomplete. Running in a limited mode without persistent cloud storage. Please update firebaseConfig in index.html.");
             window.userId = crypto.randomUUID(); // Generate a random ID for local testing without Firebase
-            window.currentUserEmail = "Local Test User";
+            window.currentUserEmail = "Local Test User (No Firebase)";
             window.isAuthReady = true; // Mark auth as ready even without full Firebase setup
             if (window.moneyManager) {
                 window.moneyManager.toggleUIForAuth(null); // Force UI to "not signed in" state
-                window.moneyManager.loadRecords();
+                window.moneyManager.loadRecords(); // Attempt to load (will be empty without Firebase)
             }
         }
 
