@@ -25,7 +25,7 @@ class MoneyLendingManager {
         const clearAllDataBtn = document.getElementById('clearAllDataBtn');
         const signInGoogleBtn = document.getElementById('signInGoogleBtn');
         const signOutBtn = document.getElementById('signOutBtn');
-        const recordsList = document.getElementById('recordsList'); // Get the parent element for event delegation
+        // const recordsList = document.getElementById('recordsList'); // No longer directly used for delegation
 
         // Email/Password elements
         const emailInput = document.getElementById('emailInput');
@@ -66,8 +66,10 @@ class MoneyLendingManager {
         });
 
         // Event delegation for "Mark as Paid" and "Mark as Pending" buttons
-        recordsList.addEventListener('click', (event) => {
+        // Attach listener to document.body to catch clicks on dynamically added elements
+        document.body.addEventListener('click', (event) => {
             const target = event.target;
+            // Check if the clicked element (or its closest ancestor) is a mark-paid-btn or mark-pending-btn
             if (target.classList.contains('mark-paid-btn')) {
                 const recordId = target.dataset.id; // Get ID from data-id attribute
                 this.markAsPaid(recordId);
@@ -481,7 +483,8 @@ class MoneyLendingManager {
 
         // Get a reference to the user's records collection
         const recordsCollectionRef = window.firebase.collection(window.firebase.db, `artifacts/${window.firebase.appId}/users/${window.userId}/records`);
-        const q = window.firebase.query(recordsCollectionRef); // Create a query (can add orderBy, where clauses here)
+        // We are NOT adding orderBy here to prevent reordering on status change
+        const q = window.firebase.query(recordsCollectionRef);
 
         // Set up a real-time listener using onSnapshot
         console.log("loadRecords: Setting up new Firestore listener for user:", window.userId);
@@ -553,12 +556,8 @@ class MoneyLendingManager {
             return;
         }
 
-        // Sort records: pending first, then paid. Within each group, sort alphabetically by name.
+        // *** UPDATED: Sort records alphabetically by name ***
         const sortedRecords = [...this.records].sort((a, b) => {
-            // Pending records come before paid records
-            if (a.paid === 'no' && b.paid === 'yes') return -1;
-            if (a.paid === 'yes' && b.paid === 'no') return 1;
-            // For records with the same status, sort by name
             return a.name.localeCompare(b.name);
         });
 
@@ -566,6 +565,17 @@ class MoneyLendingManager {
         recordsList.innerHTML = sortedRecords.map(record =>
             this.createRecordHTML(record, false) // Pass false for general record list styling
         ).join('');
+    }
+
+    /**
+     * Helper function to escape HTML entities to prevent XSS.
+     * @param {string} str - The string to escape.
+     * @returns {string} The escaped string.
+     */
+    escapeHTML(str) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
     }
 
     /**
@@ -599,7 +609,7 @@ class MoneyLendingManager {
         return `
             <div class="${containerClass}">
                 <div class="record-info">
-                    <div class="record-name">${record.name}</div>
+                    <div class="record-name">${this.escapeHTML(record.name)}</div>
                     <div class="record-amount">₹${parseFloat(record.amount).toFixed(2)}</div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -629,7 +639,14 @@ class MoneyLendingManager {
             });
             console.log("Record marked as paid successfully:", recordId);
             this.showStatus(`Record marked as paid!`, 'success');
-            // The onSnapshot listener will automatically re-load and update the UI
+
+            // Refresh search results if visible
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            if (searchInput.value.trim() !== '' && searchResults.style.display === 'block') {
+                this.searchRecords(searchInput.value);
+            }
+            // The onSnapshot listener will automatically re-load and update the main UI
         } catch (error) {
             console.error('Error updating record to paid:', error);
             this.showStatus('Error updating record: ' + error.message, 'error');
@@ -655,7 +672,14 @@ class MoneyLendingManager {
             });
             console.log("Record marked as pending successfully:", recordId);
             this.showStatus(`Record marked as pending!`, 'info'); // Use 'info' for a neutral status
-            // The onSnapshot listener will automatically re-load and update the UI
+
+            // Refresh search results if visible
+            const searchInput = document.getElementById('searchInput');
+            const searchResults = document.getElementById('searchResults');
+            if (searchInput.value.trim() !== '' && searchResults.style.display === 'block') {
+                this.searchRecords(searchInput.value);
+            }
+            // The onSnapshot listener will automatically re-load and update the main UI
         } catch (error) {
             console.error('Error updating record to pending:', error);
             this.showStatus('Error updating record: ' + error.message, 'error');
