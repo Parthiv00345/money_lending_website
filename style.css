@@ -5,33 +5,135 @@
     box-sizing: border-box;
 }
 
-/* Body styling: font, background, minimum height, padding, and text color */
+/* Define CSS variables for colors (Dark Theme defaults) */
+:root {
+    --body-bg: #1a1a1a;
+    --container-bg: #282828;
+    --card-bg: #333;
+    --text-color-primary: #e0e0e0;
+    --text-color-secondary: #aaa;
+    --text-color-heading: #f0f0f0;
+    --border-color-light: #3a3a3a;
+    --border-color-medium: #444;
+    --border-color-dark: #555;
+    --input-bg: #3a3a3a;
+    --input-text-color: #f0f0f0;
+    --input-placeholder-color: #aaa;
+    --accent-color: #8f94fb; /* Used for values and focus borders */
+    --gradient-start: #4e54c8;
+    --gradient-end: #8f94fb;
+
+    /* Status colors (adjusted for better contrast on dark theme) */
+    --status-pending-bg: #4a148c; /* Darker purple */
+    --status-pending-text: #f3e5f5;
+    --status-pending-border: #6a1b9a;
+
+    --status-paid-bg: #1b5e20; /* Darker green */
+    --status-paid-text: #e8f5e9;
+    --status-paid-border: #2e7d32;
+
+    --status-success-bg: #2e7d32;
+    --status-success-text: white;
+    --status-success-border: #4caf50;
+
+    --status-error-bg: #d32f2f;
+    --status-error-text: white;
+    --status-error-border: #f44336;
+
+    --status-loading-bg: #1565c0;
+    --status-loading-text: white;
+    --status-loading-border: #2196f3;
+
+    --status-info-bg: #ff8f00; /* Darker orange */
+    --status-info-text: white;
+    --status-info-border: #ffb300;
+
+    /* Modal colors */
+    --modal-bg: #333;
+    --modal-text: #e0e0e0;
+    --modal-overlay-bg: rgba(0,0,0,0.7);
+}
+
+/* Light Theme variables override - REDUCED BRIGHTNESS */
+body.light-theme {
+    --body-bg: #e8ecef; /* Slightly darker off-white */
+    --container-bg: #ffffff; /* Remains white for content box */
+    --card-bg: #f5f5f5; /* Slightly off-white for cards */
+    --text-color-primary: #3d3d3d; /* Darker gray for primary text */
+    --text-color-secondary: #777777; /* Darker gray for secondary text */
+    --text-color-heading: #2c2c2c; /* Even darker for headings */
+    --border-color-light: #e0e0e0; /* Softer light border */
+    --border-color-medium: #d0d0d0; /* Softer medium border */
+    --border-color-dark: #c0c0c0; /* Softer dark border */
+    --input-bg: #fcfcfc; /* Very light background for inputs */
+    --input-text-color: #3d3d3d; /* Darker text for inputs */
+    --input-placeholder-color: #a0a0a0; /* Softer placeholder */
+    --accent-color: #4e54c8; /* Primary blue */
+    --gradient-start: #4e54c8;
+    --gradient-end: #8f94fb;
+
+    /* Status colors (adjusted for better contrast on light theme) */
+    --status-pending-bg: #ffe0e0; /* Softer red background */
+    --status-pending-text: #c62828; /* Darker red text */
+    --status-pending-border: #ffcdd2;
+
+    --status-paid-bg: #e0f2e0; /* Softer green background */
+    --status-paid-text: #2e7d32; /* Darker green text */
+    --status-paid-border: #c8e6c9;
+
+    --status-success-bg: #e0f2e0;
+    --status-success-text: #2e7d32;
+    --status-success-border: #c8e6c9;
+
+    --status-error-bg: #ffe0e0;
+    --status-error-text: #c62828;
+    --status-error-border: #ffcdd2;
+
+    --status-loading-bg: #e0f7fa; /* Softer blue background */
+    --status-loading-text: #0277bd; /* Darker blue text */
+    --status-loading-border: #b3e5fc;
+
+    --status-info-bg: #fff8e1; /* Softer orange background */
+    --status-info-text: #f57f17; /* Darker orange text */
+    --status-info-border: #ffe0b2;
+
+    /* Modal colors */
+    --modal-bg: #ffffff; /* Remains white for modal */
+    --modal-text: #3d3d3d; /* Darker text */
+    --modal-overlay-bg: rgba(0,0,0,0.3); /* Lighter overlay */
+}
+
+
+/* Apply variables */
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: #1a1a1a; /* Deep charcoal black background */
+    background-color: var(--body-bg);
     min-height: 100vh; /* Full viewport height */
     padding: 20px;
-    color: #e0e0e0; /* Light gray text for contrast */
+    color: var(--text-color-primary);
     display: flex; /* Use flexbox for centering content */
     justify-content: center;
     align-items: center;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth theme transition */
 }
 
 /* Main container for the application content */
 .container {
     max-width: 1000px; /* Maximum width for desktop */
     width: 100%; /* Ensure it takes full width on smaller screens */
-    background: #282828; /* Slightly lighter dark background for the container */
+    background: var(--container-bg);
     border-radius: 12px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.4); /* More pronounced shadow for depth */
     overflow: hidden; /* Ensures rounded corners are respected by children */
     margin: 20px auto; /* Add margin top/bottom for smaller screens */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth theme transition */
 }
 
 /* Header section styling */
 header {
-    background: linear-gradient(135deg, #4e54c8, #8f94fb); /* Existing vibrant gradient */
-    color: white;
+    background: var(--gradient-start); /* Use start of gradient */
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)); /* Existing vibrant gradient */
+    color: white; /* Header text remains white for contrast */
     text-align: center;
     padding: 30px 20px;
     margin-bottom: 20px;
@@ -83,34 +185,58 @@ header .subtitle {
 
 /* Sign Out button specific style */
 .signout-btn {
-    background-color: #444; /* Darker background for sign out */
-    color: #e0e0e0;
-    border: 1px solid #555;
+    background-color: var(--border-color-medium);
+    color: var(--text-color-primary);
+    border: 1px solid var(--border-color-dark);
 }
 
 .signout-btn:hover {
-    background-color: #555;
+    background-color: var(--border-color-dark);
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
-/* NEW: Combined Authentication Section */
+/* Settings Button */
+.settings-btn {
+    background-color: transparent; /* Transparent background */
+    border: 1px solid rgba(255, 255, 255, 0.5); /* Light border */
+    color: white; /* White icon */
+    padding: 8px 12px; /* Slightly smaller padding */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1); /* Subtle hover background */
+    border-color: white;
+}
+
+.settings-btn svg {
+    width: 20px; /* Adjust SVG size */
+    height: 20px;
+    color: white; /* Ensure SVG color is white */
+}
+
+
+/* Combined Authentication Section */
 .auth-section {
     padding: 30px 20px;
     text-align: center;
-    background-color: #333; /* Darker background for auth section */
+    background-color: var(--card-bg); /* Use card background variable */
     border-radius: 12px;
     margin: 20px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth theme transition */
 }
 
 .auth-section h2 {
     font-size: 1.5rem;
-    color: #f0f0f0; /* Lighter heading color */
+    color: var(--text-color-heading); /* Use heading text color variable */
     margin-bottom: 25px;
 }
 
 .auth-btn.google-btn {
-    background-color: #db4437; /* Google red */
+    background-color: #db4437; /* Google red - remains fixed */
     color: white;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     display: flex; /* Use flex to center icon and text */
@@ -135,7 +261,7 @@ header .subtitle {
 
 .or-separator {
     margin: 20px 0;
-    color: #aaa; /* Lighter separator text */
+    color: var(--text-color-secondary); /* Use secondary text color variable */
     position: relative;
     font-size: 0.9rem;
 }
@@ -147,7 +273,7 @@ header .subtitle {
     top: 50%;
     width: 40%;
     height: 1px;
-    background-color: #555; /* Darker separator line */
+    background-color: var(--border-color-dark); /* Use dark border color variable */
 }
 
 .or-separator::before {
@@ -167,30 +293,30 @@ header .subtitle {
     width: 100%;
     padding: 12px 15px;
     margin-bottom: 15px;
-    border: 1px solid #555; /* Darker border */
+    border: 1px solid var(--border-color-dark); /* Use dark border color variable */
     border-radius: 8px;
     font-size: 16px;
     font-family: inherit;
-    background-color: #444; /* Dark input background */
-    color: #f0f0f0; /* Light input text */
+    background-color: var(--input-bg); /* Use input background variable */
+    color: var(--input-text-color); /* Use input text color variable */
     transition: border-color 0.3s;
 }
 
 .email-password-form input[type="email"]:focus,
 .email-password-form input[type="password"]:focus {
     outline: none;
-    border-color: #8f94fb; /* Accent color on focus */
+    border-color: var(--accent-color); /* Use accent color for focus */
 }
 
 /* Placeholder text color for dark inputs */
 .email-password-form input::placeholder {
-    color: #aaa;
+    color: var(--input-placeholder-color);
     opacity: 1; /* Firefox default opacity is lower */
 }
 
 
 .auth-btn.email-btn {
-    background-color: #007bff; /* A standard blue for email buttons */
+    background-color: #007bff; /* A standard blue for email buttons - remains fixed */
     color: white;
     width: 100%;
     max-width: 300px;
@@ -204,7 +330,7 @@ header .subtitle {
 }
 
 .auth-btn.secondary-email-btn {
-    background-color: #6c757d; /* A secondary color for sign-up */
+    background-color: #6c757d; /* A secondary color for sign-up - remains fixed */
 }
 
 .auth-btn.secondary-email-btn:hover {
@@ -221,25 +347,32 @@ header .subtitle {
     text-align: center;
     display: block; /* Ensure it's always block to take space */
     min-height: 20px; /* Give it some height even when empty */
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; /* Smooth transition */
 }
 
-/* Specific colors for status messages */
+/* Specific colors for status messages (using variables) */
 .status-message.success {
-    background: #2e7d32; /* Darker green background */
-    color: white;
-    border: 1px solid #4caf50;
+    background: var(--status-success-bg);
+    color: var(--status-success-text);
+    border: 1px solid var(--status-success-border);
 }
 
 .status-message.error {
-    background: #d32f2f; /* Darker red background */
-    color: white;
-    border: 1px solid #f44336;
+    background: var(--status-error-bg);
+    color: var(--status-error-text);
+    border: 1px solid var(--status-error-border);
 }
 
 .status-message.loading {
-    background: #1565c0; /* Darker blue background */
-    color: white;
-    border: 1px solid #2196f3;
+    background: var(--status-loading-bg);
+    color: var(--status-loading-text);
+    border: 1px solid var(--status-loading-border);
+}
+
+.status-message.info { /* New style for informational messages */
+    background: var(--status-info-bg);
+    color: var(--status-info-text);
+    border: 1px solid var(--status-info-border);
 }
 
 
@@ -254,12 +387,12 @@ header .subtitle {
 
 /* Individual statistic card styling */
 .stat-card {
-    background: #333; /* Dark card background */
+    background: var(--card-bg); /* Use card background variable */
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.3); /* Adjusted shadow */
     text-align: center;
-    transition: transform 0.2s ease-in-out; /* Smooth hover effect */
+    transition: transform 0.2s ease-in-out, background-color 0.3s ease, color 0.3s ease; /* Smooth theme transition */
 }
 
 .stat-card:hover {
@@ -268,7 +401,7 @@ header .subtitle {
 
 .stat-card h3 {
     font-size: 1rem;
-    color: #aaa; /* Lighter gray for subheadings */
+    color: var(--text-color-secondary); /* Use secondary text color variable */
     margin-bottom: 10px;
     font-weight: 500;
 }
@@ -276,13 +409,14 @@ header .subtitle {
 .stat-value {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #8f94fb; /* Primary accent color for values */
+    color: var(--accent-color); /* Primary accent color for values */
 }
 
 /* Common padding and border for main sections */
 .upload-section, .search-section, .records-section {
     padding: 20px;
-    border-bottom: 1px solid #3a3a3a; /* Darker separator line */
+    border-bottom: 1px solid var(--border-color-light); /* Use light border color variable */
+    transition: border-color 0.3s ease; /* Smooth transition */
 }
 
 /* Remove bottom border for the last section */
@@ -292,7 +426,7 @@ header .subtitle {
 
 /* Common heading style for sections */
 h2 {
-    color: #f0f0f0; /* Lighter heading color */
+    color: var(--text-color-heading); /* Use heading text color variable */
     margin-bottom: 15px;
     font-size: 1.3rem;
     font-weight: 500;
@@ -308,29 +442,29 @@ h2 {
 
 .records-count {
     font-size: 0.9rem;
-    color: #aaa; /* Lighter gray for count */
+    color: var(--text-color-secondary); /* Use secondary text color variable */
 }
 
 /* File input styling */
 #fileInput {
     padding: 12px;
-    border: 2px dashed #8f94fb; /* Dashed border with primary color */
+    border: 2px dashed var(--accent-color); /* Dashed border with primary color */
     border-radius: 8px;
     width: 100%;
     margin-bottom: 15px;
-    background: #3a3a3a; /* Dark input background */
-    color: #f0f0f0; /* Light input text */
+    background: var(--input-bg); /* Use input background variable */
+    color: var(--input-text-color); /* Use input text color variable */
     font-family: inherit;
     transition: all 0.3s;
 }
 
 #fileInput:hover {
-    background: #444;
+    background: var(--border-color-medium); /* Slightly lighter background on hover */
 }
 
 /* Upload button styling */
 #uploadBtn {
-    background: #4e54c8;
+    background: var(--gradient-start); /* Use gradient start color */
     color: white;
     border: none;
     padding: 12px 25px;
@@ -343,7 +477,7 @@ h2 {
 }
 
 #uploadBtn:hover {
-    background: #4348b1;
+    background: var(--gradient-end); /* Use gradient end color on hover */
 }
 
 /* Search input container for positioning search results */
@@ -355,18 +489,18 @@ h2 {
 #searchInput {
     width: 100%;
     padding: 12px 15px;
-    border: 2px solid #555; /* Darker border */
+    border: 2px solid var(--border-color-dark); /* Use dark border color variable */
     border-radius: 8px;
     font-size: 16px;
     transition: border-color 0.3s;
     font-family: inherit;
-    background-color: #3a3a3a; /* Dark input background */
-    color: #f0f0f0; /* Light input text */
+    background-color: var(--input-bg); /* Use input background variable */
+    color: var(--input-text-color); /* Use input text color variable */
 }
 
 #searchInput:focus {
     outline: none;
-    border-color: #8f94fb; /* Highlight on focus */
+    border-color: var(--accent-color); /* Highlight on focus */
 }
 
 /* Search results dropdown container */
@@ -375,8 +509,8 @@ h2 {
     top: 100%; /* Position below the search input */
     left: 0;
     right: 0;
-    background: #333; /* Darker background for search results */
-    border: 1px solid #444; /* Darker border */
+    background: var(--card-bg); /* Use card background variable */
+    border: 1px solid var(--border-color-medium); /* Use medium border color variable */
     border-top: none; /* No top border as it connects to the input */
     border-radius: 0 0 8px 8px; /* Rounded corners only at the bottom */
     max-height: 300px;
@@ -384,12 +518,13 @@ h2 {
     z-index: 1000; /* Ensure it appears above other content */
     display: none; /* Hidden by default */
     box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    transition: background-color 0.3s ease, border-color 0.3s ease; /* Smooth theme transition */
 }
 
 /* Styling for individual search result items and main record list items */
 .search-result-item, .record-item {
     padding: 15px;
-    border-bottom: 1px solid #444; /* Darker border */
+    border-bottom: 1px solid var(--border-color-medium); /* Use medium border color variable */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -397,7 +532,7 @@ h2 {
 }
 
 .search-result-item:hover, .record-item:hover {
-    background: #3a3a3a; /* Subtle hover effect */
+    background: var(--border-color-light); /* Subtle hover effect */
 }
 
 .search-result-item:last-child, .record-item:last-child {
@@ -411,11 +546,11 @@ h2 {
 .record-name {
     font-weight: 500;
     font-size: 16px;
-    color: #f0f0f0; /* Light text */
+    color: var(--text-color-heading); /* Use heading text color variable */
 }
 
 .record-amount {
-    color: #aaa; /* Lighter gray for amount */
+    color: var(--text-color-secondary); /* Use secondary text color variable */
     font-size: 14px;
     margin-top: 5px;
 }
@@ -427,25 +562,26 @@ h2 {
     font-size: 12px;
     font-weight: 500;
     text-transform: uppercase;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; /* Smooth transition */
 }
 
-/* Specific colors for pending status */
+/* Specific colors for pending status (using variables) */
 .status-pending {
-    background: #4a148c; /* Darker purple for pending */
-    color: #f3e5f5; /* Light text on dark purple */
-    border: 1px solid #6a1b9a;
+    background: var(--status-pending-bg);
+    color: var(--status-pending-text);
+    border: 1px solid var(--status-pending-border);
 }
 
-/* Specific colors for paid status */
+/* Specific colors for paid status (using variables) */
 .status-paid {
-    background: #1b5e20; /* Darker green for paid */
-    color: #e8f5e9; /* Light text on dark green */
-    border: 1px solid #2e7d32;
+    background: var(--status-paid-bg);
+    color: var(--status-paid-text);
+    border: 1px solid var(--status-paid-border);
 }
 
 /* Mark as Paid button styling */
 .mark-paid-btn {
-    background: #4e54c8;
+    background: var(--gradient-start); /* Use gradient start color */
     color: white;
     border: none;
     padding: 8px 15px;
@@ -457,17 +593,17 @@ h2 {
 }
 
 .mark-paid-btn:hover {
-    background: #4348b1;
+    background: var(--gradient-end); /* Use gradient end color on hover */
 }
 
 .mark-paid-btn:disabled {
-    background: #555; /* Darker disabled state */
+    background: var(--border-color-dark); /* Darker disabled state */
     cursor: not-allowed;
 }
 
 /* Style for Mark as Pending button */
 .mark-pending-btn {
-    background: #607d8b; /* Blue-grey color for pending/revert action */
+    background: #607d8b; /* Blue-grey color for pending/revert action - remains fixed */
     color: white;
     border: none;
     padding: 8px 15px;
@@ -492,47 +628,45 @@ h2 {
     font-weight: 500;
     display: none; /* Hidden by default */
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; /* Smooth transition */
 }
 
-/* Specific colors for different status types */
+/* Specific colors for different status types (using variables) */
 .success {
-    background: #2e7d32;
-    color: white;
-    border: 1px solid #4caf50;
-    display: block;
+    background: var(--status-success-bg);
+    color: var(--status-success-text);
+    border: 1px solid var(--status-success-border);
 }
 
 .error {
-    background: #d32f2f;
-    color: white;
-    border: 1px solid #f44336;
-    display: block;
+    background: var(--status-error-bg);
+    color: var(--status-error-text);
+    border: 1px solid var(--status-error-border);
 }
 
 .loading {
-    background: #1565c0;
-    color: white;
-    border: 1px solid #2196f3;
-    display: block;
+    background: var(--status-loading-bg);
+    color: var(--status-loading-text);
+    border: 1px solid var(--status-loading-border);
 }
 
 .info { /* New style for informational messages */
-    background: #ff8f00; /* Darker orange for info */
-    color: white;
-    border: 1px solid #ffb300;
-    display: block;
+    background: var(--status-info-bg);
+    color: var(--status-info-text);
+    border: 1px solid var(--status-info-border);
 }
 
 /* Clear Data Button Section */
 .clear-data-section {
     padding: 20px;
     text-align: center;
-    border-top: 1px solid #3a3a3a; /* Darker border */
+    border-top: 1px solid var(--border-color-light); /* Use light border color variable */
     margin-top: 20px;
+    transition: border-color 0.3s ease; /* Smooth transition */
 }
 
 .clear-data-btn {
-    background: #f44336; /* Red for destructive action */
+    background: #f44336; /* Red for destructive action - remains fixed */
     color: white;
     border: none;
     padding: 12px 25px;
@@ -559,14 +693,15 @@ h2 {
     width: 100%; /* Full width */
     height: 100%; /* Full height */
     overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.7); /* Darker semi-transparent background */
+    background-color: var(--modal-overlay-bg); /* Use modal overlay background variable */
     display: flex; /* Use flexbox for centering content */
     justify-content: center; /* Center horizontally */
     align-items: center; /* Center vertically */
+    transition: background-color 0.3s ease; /* Smooth transition */
 }
 
 .modal-content {
-    background-color: #333; /* Dark modal background */
+    background-color: var(--modal-bg); /* Use modal background variable */
     margin: auto; /* Auto margins help with centering */
     padding: 25px;
     border-radius: 10px;
@@ -575,11 +710,12 @@ h2 {
     max-width: 400px; /* Max width for larger screens */
     text-align: center;
     position: relative;
-    color: #e0e0e0; /* Light text inside modal */
+    color: var(--modal-text); /* Use modal text color variable */
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
 }
 
 .close-button {
-    color: #aaa;
+    color: var(--text-color-secondary); /* Use secondary text color variable */
     position: absolute;
     top: 10px;
     right: 15px;
@@ -591,7 +727,7 @@ h2 {
 
 .close-button:hover,
 .close-button:focus {
-    color: white;
+    color: var(--text-color-primary); /* Primary text color on hover */
     text-decoration: none;
     cursor: pointer;
 }
@@ -599,7 +735,7 @@ h2 {
 #modalMessage {
     margin-bottom: 20px;
     font-size: 1.1rem;
-    color: #e0e0e0;
+    color: var(--modal-text);
 }
 
 .modal-buttons button {
@@ -640,6 +776,59 @@ h2 {
     background-color: #45a049;
 }
 
+/* Theme Options specific styles */
+#themeModal h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.theme-options {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.theme-btn {
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    border: 1px solid transparent; /* Default transparent border */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.theme-btn.dark-theme-option {
+    background-color: #444;
+    color: white;
+    border-color: #555;
+}
+
+.theme-btn.dark-theme-option:hover {
+    background-color: #555;
+    border-color: #666;
+}
+
+.theme-btn.light-theme-option {
+    background-color: #f0f0f0; /* Slightly darker than pure white */
+    color: #3d3d3d; /* Darker text for contrast */
+    border-color: #d0d0d0; /* Softer border */
+}
+
+.theme-btn.light-theme-option:hover {
+    background-color: #e0e0e0; /* Even softer on hover */
+    border-color: #c0c0c0;
+}
+
+.theme-icon {
+    font-size: 1.2em; /* Adjust icon size */
+}
+
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
@@ -671,5 +860,8 @@ h2 {
     .auth-btn.google-btn,
     .auth-btn.email-btn {
         max-width: 100%; /* Full width on small screens */
+    }
+    .theme-options {
+        flex-direction: column; /* Stack theme buttons vertically */
     }
 }

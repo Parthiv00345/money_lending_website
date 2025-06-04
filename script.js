@@ -13,6 +13,7 @@ class MoneyLendingManager {
     // Initializes the application by binding event listeners
     init() {
         this.bindEvents();
+        this.applySavedTheme(); // Apply theme on initialization
         // The loadRecords() function is called by the onAuthStateChanged listener in index.html
         // once Firebase authentication is ready.
     }
@@ -33,6 +34,13 @@ class MoneyLendingManager {
         const signInEmailBtn = document.getElementById('signInEmailBtn');
         const signUpEmailBtn = document.getElementById('signUpEmailBtn'); // Explicit sign-up button
         const authStatusMessage = document.getElementById('authStatusMessage');
+
+        // NEW: Theme related elements
+        const settingsBtn = document.getElementById('settingsBtn');
+        const themeModal = document.getElementById('themeModal');
+        const closeThemeModalBtn = document.getElementById('closeThemeModalBtn');
+        const darkThemeBtn = document.getElementById('darkThemeBtn');
+        const lightThemeBtn = document.getElementById('lightThemeBtn');
 
 
         // Event listener for the upload button
@@ -81,9 +89,54 @@ class MoneyLendingManager {
 
 
         // Event listeners for the custom modal (alert/confirm dialog)
-        document.querySelector('.close-button').addEventListener('click', () => this.hideModal());
-        document.getElementById('modalOkBtn').addEventListener('click', () => this.hideModal());
+        document.querySelector('#customModal .close-button').addEventListener('click', () => this.hideModal('customModal'));
+        document.getElementById('modalOkBtn').addEventListener('click', () => this.hideModal('customModal'));
+
+        // NEW: Settings button and Theme Modal listeners
+        settingsBtn.addEventListener('click', () => themeModal.style.display = 'flex');
+        closeThemeModalBtn.addEventListener('click', () => themeModal.style.display = 'none');
+        darkThemeBtn.addEventListener('click', () => {
+            this.applyTheme('dark');
+            themeModal.style.display = 'none';
+        });
+        lightThemeBtn.addEventListener('click', () => {
+            this.applyTheme('light');
+            themeModal.style.display = 'none';
+        });
+
+        // Close theme modal if clicked outside
+        themeModal.addEventListener('click', (e) => {
+            if (e.target === themeModal) {
+                themeModal.style.display = 'none';
+            }
+        });
     }
+
+    /**
+     * Applies the saved theme from localStorage or defaults to dark.
+     */
+    applySavedTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark if nothing saved
+        this.applyTheme(savedTheme, false); // Apply without saving again
+    }
+
+    /**
+     * Applies the selected theme to the body and saves it to localStorage.
+     * @param {string} themeName - 'dark' or 'light'.
+     * @param {boolean} save - Whether to save the theme to localStorage (default: true).
+     */
+    applyTheme(themeName, save = true) {
+        const body = document.body;
+        if (themeName === 'light') {
+            body.classList.add('light-theme');
+        } else {
+            body.classList.remove('light-theme');
+        }
+        if (save) {
+            localStorage.setItem('theme', themeName);
+        }
+    }
+
 
     /**
      * Toggles the visibility of UI elements based on authentication status.
@@ -337,50 +390,59 @@ class MoneyLendingManager {
      * Displays a custom modal message, replacing browser's alert/confirm.
      * @param {string} message - The message to display in the modal.
      * @param {string} type - 'alert' for OK button, 'confirm' for Confirm/Cancel buttons.
+     * @param {string} modalId - The ID of the modal to show (e.g., 'customModal', 'themeModal').
      * @returns {Promise<boolean>} Resolves to true for confirm, false for cancel, or always true for alert.
      */
-    showModal(message, type = 'alert') {
-        const modal = document.getElementById('customModal');
-        const modalMessage = document.getElementById('modalMessage');
-        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-        const modalCancelBtn = document.getElementById('modalCancelBtn');
-        const modalOkBtn = document.getElementById('modalOkBtn');
+    showModal(message, type = 'alert', modalId = 'customModal') {
+        const modal = document.getElementById(modalId);
+        const modalMessage = modal.querySelector('#modalMessage'); // Use querySelector within the specific modal
+        const modalConfirmBtn = modal.querySelector('#modalConfirmBtn');
+        const modalCancelBtn = modal.querySelector('#modalCancelBtn');
+        const modalOkBtn = modal.querySelector('#modalOkBtn');
 
-        modalMessage.textContent = message; // Set the message text
+        // Only set message if it's the customModal, themeModal has its own content
+        if (modalId === 'customModal') {
+            modalMessage.textContent = message; // Set the message text
+        }
 
-        // Hide all buttons initially
-        modalConfirmBtn.style.display = 'none';
-        modalCancelBtn.style.display = 'none';
-        modalOkBtn.style.display = 'none';
+        // Hide all buttons initially for customModal
+        if (modalId === 'customModal') {
+            modalConfirmBtn.style.display = 'none';
+            modalCancelBtn.style.display = 'none';
+            modalOkBtn.style.display = 'none';
+        }
+
 
         return new Promise(resolve => {
-            if (type === 'confirm') {
-                // Show Confirm and Cancel buttons for confirmation dialogs
-                modalConfirmBtn.style.display = 'inline-block';
-                modalCancelBtn.style.display = 'inline-block';
-                modalConfirmBtn.onclick = () => {
-                    this.hideModal();
-                    resolve(true); // Resolve with true if confirmed
-                };
-                modalCancelBtn.onclick = () => {
-                    this.hideModal();
-                    resolve(false); // Resolve with false if cancelled
-                };
-            } else { // Default to 'alert' type
-                // Show only the OK button for alert messages
-                modalOkBtn.style.display = 'inline-block';
-                modalOkBtn.onclick = () => {
-                    this.hideModal();
-                    resolve(true); // Always resolve with true for alerts
-                };
+            if (modalId === 'customModal') { // Only apply button logic for customModal
+                if (type === 'confirm') {
+                    // Show Confirm and Cancel buttons for confirmation dialogs
+                    modalConfirmBtn.style.display = 'inline-block';
+                    modalCancelBtn.style.display = 'inline-block';
+                    modalConfirmBtn.onclick = () => {
+                        this.hideModal(modalId);
+                        resolve(true); // Resolve with true if confirmed
+                    };
+                    modalCancelBtn.onclick = () => {
+                        this.hideModal(modalId);
+                        resolve(false); // Resolve with false if cancelled
+                    };
+                } else { // Default to 'alert' type
+                    // Show only the OK button for alert messages
+                    modalOkBtn.style.display = 'inline-block';
+                    modalOkBtn.onclick = () => {
+                        this.hideModal(modalId);
+                        resolve(true); // Always resolve with true for alerts
+                    };
+                }
             }
             modal.style.display = 'flex'; // Display the modal (using flex for centering)
         });
     }
 
-    // Hides the custom modal
-    hideModal() {
-        document.getElementById('customModal').style.display = 'none';
+    // Hides a specific custom modal
+    hideModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
     }
 
     // Handles the Excel file upload process
@@ -556,7 +618,7 @@ class MoneyLendingManager {
             return;
         }
 
-        // *** UPDATED: Sort records alphabetically by name ***
+        // Sort records alphabetically by name
         const sortedRecords = [...this.records].sort((a, b) => {
             return a.name.localeCompare(b.name);
         });
