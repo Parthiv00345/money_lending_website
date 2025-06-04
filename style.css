@@ -8,35 +8,41 @@
 /* Body styling: font, background, minimum height, padding, and text color */
 body {
     font-family: 'Poppins', sans-serif;
-    background-color: #f5f7fa;
+    background-color: #1a1a1a; /* Deep charcoal black background */
     min-height: 100vh; /* Full viewport height */
     padding: 20px;
-    color: #333;
+    color: #e0e0e0; /* Light gray text for contrast */
+    display: flex; /* Use flexbox for centering content */
+    justify-content: center;
+    align-items: center;
 }
 
 /* Main container for the application content */
 .container {
     max-width: 1000px; /* Maximum width for desktop */
-    margin: 0 auto; /* Center the container */
-    background: white;
+    width: 100%; /* Ensure it takes full width on smaller screens */
+    background: #282828; /* Slightly lighter dark background for the container */
     border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05); /* Soft shadow for depth */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4); /* More pronounced shadow for depth */
     overflow: hidden; /* Ensures rounded corners are respected by children */
+    margin: 20px auto; /* Add margin top/bottom for smaller screens */
 }
 
 /* Header section styling */
 header {
-    background: linear-gradient(135deg, #4e54c8, #8f94fb); /* Gradient background */
+    background: linear-gradient(135deg, #4e54c8, #8f94fb); /* Existing vibrant gradient */
     color: white;
     text-align: center;
     padding: 30px 20px;
     margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); /* Shadow for header */
 }
 
 header h1 {
     font-size: 2.5rem;
     margin: 0;
     font-weight: 600;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.2); /* Subtle text shadow */
 }
 
 header .subtitle {
@@ -70,34 +76,36 @@ header .subtitle {
     cursor: pointer;
     font-size: 1rem;
     font-weight: 500;
-    transition: all 0.3s ease;
+    transition: all 0.3s ease; /* Smooth transitions for all states */
     font-family: 'Poppins', sans-serif;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Subtle shadow */
 }
 
 /* Sign Out button specific style */
 .signout-btn {
-    background-color: #f0f0f0;
-    color: #333;
-    border: 1px solid #ccc;
+    background-color: #444; /* Darker background for sign out */
+    color: #e0e0e0;
+    border: 1px solid #555;
 }
 
 .signout-btn:hover {
-    background-color: #e0e0e0;
+    background-color: #555;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
 }
 
 /* NEW: Combined Authentication Section */
 .auth-section {
     padding: 30px 20px;
     text-align: center;
-    background-color: #f8f9ff;
+    background-color: #333; /* Darker background for auth section */
     border-radius: 12px;
     margin: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 .auth-section h2 {
     font-size: 1.5rem;
-    color: #444;
+    color: #f0f0f0; /* Lighter heading color */
     margin-bottom: 25px;
 }
 
@@ -127,7 +135,7 @@ header .subtitle {
 
 .or-separator {
     margin: 20px 0;
-    color: #888;
+    color: #aaa; /* Lighter separator text */
     position: relative;
     font-size: 0.9rem;
 }
@@ -139,7 +147,7 @@ header .subtitle {
     top: 50%;
     width: 40%;
     height: 1px;
-    background-color: #ddd;
+    background-color: #555; /* Darker separator line */
 }
 
 .or-separator::before {
@@ -159,18 +167,27 @@ header .subtitle {
     width: 100%;
     padding: 12px 15px;
     margin-bottom: 15px;
-    border: 1px solid #ddd;
+    border: 1px solid #555; /* Darker border */
     border-radius: 8px;
     font-size: 16px;
     font-family: inherit;
+    background-color: #444; /* Dark input background */
+    color: #f0f0f0; /* Light input text */
     transition: border-color 0.3s;
 }
 
 .email-password-form input[type="email"]:focus,
 .email-password-form input[type="password"]:focus {
     outline: none;
-    border-color: #4e54c8;
+    border-color: #8f94fb; /* Accent color on focus */
 }
+
+/* Placeholder text color for dark inputs */
+.email-password-form input::placeholder {
+    color: #aaa;
+    opacity: 1; /* Firefox default opacity is lower */
+}
+
 
 .auth-btn.email-btn {
     background-color: #007bff; /* A standard blue for email buttons */
@@ -208,21 +225,21 @@ header .subtitle {
 
 /* Specific colors for status messages */
 .status-message.success {
-    background: #e8f5e9;
-    color: #2e7d32;
-    border: 1px solid #c8e6c9;
+    background: #2e7d32; /* Darker green background */
+    color: white;
+    border: 1px solid #4caf50;
 }
 
 .status-message.error {
-    background: #ffebee;
-    color: #d32f2f;
-    border: 1px solid #ffcdd2;
+    background: #d32f2f; /* Darker red background */
+    color: white;
+    border: 1px solid #f44336;
 }
 
 .status-message.loading {
-    background: #e3f2fd;
-    color: #1565c0;
-    border: 1px solid #bbdefb;
+    background: #1565c0; /* Darker blue background */
+    color: white;
+    border: 1px solid #2196f3;
 }
 
 
@@ -237,16 +254,21 @@ header .subtitle {
 
 /* Individual statistic card styling */
 .stat-card {
-    background: white;
+    background: #333; /* Dark card background */
     border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.3); /* Adjusted shadow */
     text-align: center;
+    transition: transform 0.2s ease-in-out; /* Smooth hover effect */
+}
+
+.stat-card:hover {
+    transform: translateY(-3px); /* Slight lift on hover */
 }
 
 .stat-card h3 {
     font-size: 1rem;
-    color: #666;
+    color: #aaa; /* Lighter gray for subheadings */
     margin-bottom: 10px;
     font-weight: 500;
 }
@@ -254,13 +276,13 @@ header .subtitle {
 .stat-value {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #4e54c8; /* Primary color for values */
+    color: #8f94fb; /* Primary accent color for values */
 }
 
 /* Common padding and border for main sections */
 .upload-section, .search-section, .records-section {
     padding: 20px;
-    border-bottom: 1px solid #eee; /* Separator line */
+    border-bottom: 1px solid #3a3a3a; /* Darker separator line */
 }
 
 /* Remove bottom border for the last section */
@@ -270,7 +292,7 @@ header .subtitle {
 
 /* Common heading style for sections */
 h2 {
-    color: #444;
+    color: #f0f0f0; /* Lighter heading color */
     margin-bottom: 15px;
     font-size: 1.3rem;
     font-weight: 500;
@@ -286,7 +308,7 @@ h2 {
 
 .records-count {
     font-size: 0.9rem;
-    color: #666;
+    color: #aaa; /* Lighter gray for count */
 }
 
 /* File input styling */
@@ -296,13 +318,14 @@ h2 {
     border-radius: 8px;
     width: 100%;
     margin-bottom: 15px;
-    background: #f8f9ff;
+    background: #3a3a3a; /* Dark input background */
+    color: #f0f0f0; /* Light input text */
     font-family: inherit;
     transition: all 0.3s;
 }
 
 #fileInput:hover {
-    background: #f0f2ff;
+    background: #444;
 }
 
 /* Upload button styling */
@@ -332,16 +355,18 @@ h2 {
 #searchInput {
     width: 100%;
     padding: 12px 15px;
-    border: 2px solid #ddd;
+    border: 2px solid #555; /* Darker border */
     border-radius: 8px;
     font-size: 16px;
     transition: border-color 0.3s;
     font-family: inherit;
+    background-color: #3a3a3a; /* Dark input background */
+    color: #f0f0f0; /* Light input text */
 }
 
 #searchInput:focus {
     outline: none;
-    border-color: #4e54c8; /* Highlight on focus */
+    border-color: #8f94fb; /* Highlight on focus */
 }
 
 /* Search results dropdown container */
@@ -350,21 +375,21 @@ h2 {
     top: 100%; /* Position below the search input */
     left: 0;
     right: 0;
-    background: white;
-    border: 1px solid #ddd;
+    background: #333; /* Darker background for search results */
+    border: 1px solid #444; /* Darker border */
     border-top: none; /* No top border as it connects to the input */
     border-radius: 0 0 8px 8px; /* Rounded corners only at the bottom */
     max-height: 300px;
     overflow-y: auto; /* Enable scrolling for many results */
     z-index: 1000; /* Ensure it appears above other content */
     display: none; /* Hidden by default */
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
 }
 
 /* Styling for individual search result items and main record list items */
 .search-result-item, .record-item {
     padding: 15px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #444; /* Darker border */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -372,7 +397,7 @@ h2 {
 }
 
 .search-result-item:hover, .record-item:hover {
-    background: #f8f9ff; /* Subtle hover effect */
+    background: #3a3a3a; /* Subtle hover effect */
 }
 
 .search-result-item:last-child, .record-item:last-child {
@@ -386,11 +411,11 @@ h2 {
 .record-name {
     font-weight: 500;
     font-size: 16px;
-    color: #333;
+    color: #f0f0f0; /* Light text */
 }
 
 .record-amount {
-    color: #666;
+    color: #aaa; /* Lighter gray for amount */
     font-size: 14px;
     margin-top: 5px;
 }
@@ -406,16 +431,16 @@ h2 {
 
 /* Specific colors for pending status */
 .status-pending {
-    background: #ffebee;
-    color: #d32f2f;
-    border: 1px solid #ffcdd2;
+    background: #4a148c; /* Darker purple for pending */
+    color: #f3e5f5; /* Light text on dark purple */
+    border: 1px solid #6a1b9a;
 }
 
 /* Specific colors for paid status */
 .status-paid {
-    background: #e8f5e9;
-    color: #2e7d32;
-    border: 1px solid #c8e6c9;
+    background: #1b5e20; /* Darker green for paid */
+    color: #e8f5e9; /* Light text on dark green */
+    border: 1px solid #2e7d32;
 }
 
 /* Mark as Paid button styling */
@@ -436,7 +461,7 @@ h2 {
 }
 
 .mark-paid-btn:disabled {
-    background: #ccc;
+    background: #555; /* Darker disabled state */
     cursor: not-allowed;
 }
 
@@ -466,34 +491,35 @@ h2 {
     text-align: center;
     font-weight: 500;
     display: none; /* Hidden by default */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 /* Specific colors for different status types */
 .success {
-    background: #e8f5e9;
-    color: #2e7d32;
-    border: 1px solid #c8e6c9;
+    background: #2e7d32;
+    color: white;
+    border: 1px solid #4caf50;
     display: block;
 }
 
 .error {
-    background: #ffebee;
-    color: #d32f2f;
-    border: 1px solid #ffcdd2;
+    background: #d32f2f;
+    color: white;
+    border: 1px solid #f44336;
     display: block;
 }
 
 .loading {
-    background: #e3f2fd;
-    color: #1565c0;
-    border: 1px solid #bbdefb;
+    background: #1565c0;
+    color: white;
+    border: 1px solid #2196f3;
     display: block;
 }
 
 .info { /* New style for informational messages */
-    background: #fff3e0;
-    color: #ff9800;
-    border: 1px solid #ffcc80;
+    background: #ff8f00; /* Darker orange for info */
+    color: white;
+    border: 1px solid #ffb300;
     display: block;
 }
 
@@ -501,7 +527,7 @@ h2 {
 .clear-data-section {
     padding: 20px;
     text-align: center;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #3a3a3a; /* Darker border */
     margin-top: 20px;
 }
 
@@ -533,22 +559,23 @@ h2 {
     width: 100%; /* Full width */
     height: 100%; /* Full height */
     overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.4); /* Black semi-transparent background */
+    background-color: rgba(0,0,0,0.7); /* Darker semi-transparent background */
     display: flex; /* Use flexbox for centering content */
     justify-content: center; /* Center horizontally */
     align-items: center; /* Center vertically */
 }
 
 .modal-content {
-    background-color: #fefefe;
+    background-color: #333; /* Dark modal background */
     margin: auto; /* Auto margins help with centering */
-    padding: 20px;
+    padding: 25px;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* Soft shadow */
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5); /* More pronounced shadow */
     width: 90%; /* Responsive width */
     max-width: 400px; /* Max width for larger screens */
     text-align: center;
     position: relative;
+    color: #e0e0e0; /* Light text inside modal */
 }
 
 .close-button {
@@ -559,11 +586,12 @@ h2 {
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+    transition: color 0.2s;
 }
 
 .close-button:hover,
 .close-button:focus {
-    color: black;
+    color: white;
     text-decoration: none;
     cursor: pointer;
 }
@@ -571,7 +599,7 @@ h2 {
 #modalMessage {
     margin-bottom: 20px;
     font-size: 1.1rem;
-    color: #333;
+    color: #e0e0e0;
 }
 
 .modal-buttons button {
@@ -615,6 +643,13 @@ h2 {
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
+    body {
+        padding: 10px; /* Less padding on smaller screens */
+        align-items: flex-start; /* Align to top for better scrolling */
+    }
+    .container {
+        margin: 10px auto; /* Adjust margin */
+    }
     .stats-section {
         /* On medium screens, show 2 columns */
         grid-template-columns: repeat(2, 1fr);
