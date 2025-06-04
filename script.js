@@ -93,6 +93,7 @@ class MoneyLendingManager {
         const signOutBtn = document.getElementById('signOutBtn');
         const userIdDisplay = document.getElementById('userIdDisplay');
         const authStatusMessage = document.getElementById('authStatusMessage');
+        const uploadSection = document.getElementById('uploadSection'); // Get reference to upload section
 
         if (user && user.uid) { // User is logged in
             authSection.style.display = 'none';
@@ -101,6 +102,7 @@ class MoneyLendingManager {
             userIdDisplay.textContent = `User: ${user.email || 'Guest User'}`; // Display email if available, else "Guest User"
             authStatusMessage.textContent = ''; // Clear auth status message
             console.log("UI updated: Logged in state.");
+            this.toggleUploadSectionVisibility(); // Call this after user is logged in
         } else { // User is logged out
             authSection.style.display = 'block';
             authenticatedContent.style.display = 'none';
@@ -109,6 +111,7 @@ class MoneyLendingManager {
             this.records = []; // Clear records when logged out
             this.updateStatistics(); // Update stats to show zeros
             this.displayAllRecords(); // Clear displayed records
+            uploadSection.style.display = 'none'; // Ensure upload section is hidden when logged out
             if (this.unsubscribe) {
                 this.unsubscribe(); // Stop listening for data
                 this.unsubscribe = null;
@@ -116,6 +119,18 @@ class MoneyLendingManager {
             } else {
                 console.log("UI updated: Logged out state.");
             }
+        }
+    }
+
+    /**
+     * Toggles the visibility of the upload section based on whether records exist.
+     */
+    toggleUploadSectionVisibility() {
+        const uploadSection = document.getElementById('uploadSection');
+        if (this.records.length === 0) {
+            uploadSection.style.display = 'block'; // Show if no records
+        } else {
+            uploadSection.style.display = 'none'; // Hide if records exist
         }
     }
 
@@ -416,6 +431,7 @@ class MoneyLendingManager {
             this.showStatus(`Successfully uploaded ${uploadedCount} records!`, 'success');
             fileInput.value = ''; // Clear the file input field
             // The onSnapshot listener will automatically trigger loadRecords() after batch commit
+            this.toggleUploadSectionVisibility(); // Hide upload section after successful upload
         } catch (error) {
             this.showStatus('Error uploading file: ' + error.message, 'error');
             console.error('Upload error:', error);
@@ -451,6 +467,7 @@ class MoneyLendingManager {
             this.records = []; // Ensure records are cleared if not logged in
             this.displayAllRecords();
             this.updateStatistics();
+            this.toggleUploadSectionVisibility(); // Ensure hidden when logged out
             return;
         }
 
@@ -475,6 +492,7 @@ class MoneyLendingManager {
             console.log("Firestore snapshot received. Records loaded:", this.records.length);
             this.displayAllRecords(); // Update the displayed list
             this.updateStatistics(); // Update summary statistics
+            this.toggleUploadSectionVisibility(); // Update visibility based on loaded records
         }, (error) => {
             console.error("Error fetching records from Firestore:", error);
             this.showStatus('Error loading records: ' + error.message, 'error');
@@ -690,6 +708,7 @@ class MoneyLendingManager {
 
             this.showStatus(`Successfully cleared ${deletedCount} records.`, 'success');
             // The onSnapshot listener will automatically update the UI to show an empty list
+            this.toggleUploadSectionVisibility(); // Show upload section after clearing data
         } catch (error) {
             this.showStatus('Error clearing data: ' + error.message, 'error');
             console.error('Clear data error:', error);

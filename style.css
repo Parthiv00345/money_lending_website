@@ -406,14 +406,16 @@ h2 {
 
 /* Specific colors for pending status */
 .status-pending {
-    background: #ffebee; /* Light red background */
-    color: #d32f2f; /* Darker red text */
+    background: #ffebee;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
 }
 
 /* Specific colors for paid status */
 .status-paid {
-    background: #e8f5e9; /* Light green background */
-    color: #2e7d32; /* Darker green text */
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
 }
 
 /* Mark as Paid button styling */
