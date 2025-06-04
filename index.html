@@ -6,65 +6,88 @@
     <title>Money Lending Manager</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Firebase SDKs -->
     <script type="module">
+        // Import necessary Firebase functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, updateDoc, doc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, updateDoc, doc, getDocs, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Global variables for Firebase instances (will be initialized in script.js)
+        // Global variables for Firebase instances (will be initialized below)
         window.firebaseApp = null;
         window.db = null;
         window.auth = null;
         window.userId = null;
         window.isAuthReady = false;
+        window.currentUserEmail = "Not Signed In"; // To display user's email
 
-        // Initialize Firebase and Auth
+        // IMPORTANT: REPLACE THESE PLACEHOLDER VALUES WITH YOUR ACTUAL FIREBASE PROJECT CONFIGURATION!
+        // You can find this in your Firebase Console -> Project settings -> Your apps -> Web app
         const firebaseConfig = {
-          apiKey: "AIzaSyDhL-4ajbXCjijsciUgRa0liC62lpvakrU", // <--- REPLACE WITH YOUR ACTUAL FIREBASE API KEY
-          authDomain: "moneylendingapp-776c6.firebaseapp.com", // <--- REPLACE WITH YOUR ACTUAL FIREBASE AUTH DOMAIN
-          projectId: "moneylendingapp-776c6",   // <--- REPLACE WITH YOUR ACTUAL FIREBASE PROJECT ID
+          apiKey: "AIzaSyDhL-4ajbXCjijsciUgRa0liC62lpvakrU", // <--- REPLACE THIS
+          authDomain: "moneylendingapp-776c6.firebaseapp.com", // <--- REPLACE THIS
+          projectId: "moneylendingapp-776c6",   // <--- REPLACE THIS
           storageBucket: "moneylendingapp-776c6.firebasestorage.app",
           messagingSenderId: "1047951189125",
           appId: "1:1047951189125:web:64e16139e7edfdd63bf5ec"
         };
-        const appId = firebaseConfig.appId || 'default-app-id'; // Use Firebase app ID for unique collection paths
+        // Use Firebase app ID for unique collection paths, fallback for local testing
+        const appId = firebaseConfig.appId || 'default-app-id';
 
-        if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey !== "YOUR_API_KEY") { // Check if config is actually set
+        // Initialize Firebase only if the configuration is valid (i.e., not still using placeholders)
+        if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey !== "YOUR_API_KEY") {
             window.firebaseApp = initializeApp(firebaseConfig);
             window.db = getFirestore(window.firebaseApp);
             window.auth = getAuth(window.firebaseApp);
 
+            // Listen for authentication state changes
             onAuthStateChanged(window.auth, async (user) => {
                 if (user) {
+                    // User is signed in (could be anonymous or Google)
                     window.userId = user.uid;
-                    console.log("Firebase Auth Ready. User ID:", window.userId);
+                    window.currentUserEmail = user.email || "Guest User"; // Display email if available, else "Guest User"
+                    console.log("Firebase Auth Ready. User ID:", window.userId, "Email:", window.currentUserEmail);
                 } else {
-                    try {
-                        await signInAnonymously(window.auth);
-                        window.userId = window.auth.currentUser.uid;
-                        console.log("Signed in anonymously. User ID:", window.userId);
-                    } catch (error) {
-                        console.error("Error during anonymous sign-in:", error);
-                        window.userId = crypto.randomUUID(); // Fallback to a random UUID if anonymous sign-in fails
-                        console.warn("Using random UUID as userId due to auth error:", window.userId);
+                    // No user is signed in
+                    window.userId = null; // No user ID when logged out
+                    window.currentUserEmail = "Not Signed In";
+                    console.log("No user signed in.");
+                    // For Canvas environment, try custom token or anonymous sign-in
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        try {
+                            await signInWithCustomToken(window.auth, __initial_auth_token);
+                            window.userId = window.auth.currentUser.uid;
+                            window.currentUserEmail = window.auth.currentUser.email || "Canvas User";
+                            console.log("Signed in with custom token. User ID:", window.userId);
+                        } catch (error) {
+                            console.error("Error with custom token sign-in:", error);
+                            window.userId = crypto.randomUUID(); // Fallback
+                            window.currentUserEmail = "Error User";
+                        }
+                    } else {
+                        // If not in Canvas, and no user, userId remains null.
+                        // The UI will reflect "Not Signed In" and hide content.
                     }
                 }
-                window.isAuthReady = true; // Mark auth as ready
-                // Trigger initial load after auth is ready
+                window.isAuthReady = true; // Mark authentication as ready
+                // Trigger initial record loading and UI update once authentication is ready
                 if (window.moneyManager) {
-                    window.moneyManager.loadRecords();
+                    window.moneyManager.toggleUIForAuth(window.auth.currentUser); // Update UI based on auth state
+                    window.moneyManager.loadRecords(); // Load records if user is logged in
                 }
             });
         } else {
-            console.warn("Firebase config not found or not correctly set. Running in a limited mode without persistent storage.");
+            console.warn("Firebase configuration is missing or incomplete. Running in a limited mode without persistent cloud storage. Please update firebaseConfig in index.html.");
             window.userId = crypto.randomUUID(); // Generate a random ID for local testing without Firebase
-            window.isAuthReady = true;
+            window.currentUserEmail = "Local Test User";
+            window.isAuthReady = true; // Mark auth as ready even without full Firebase setup
             if (window.moneyManager) {
+                window.moneyManager.toggleUIForAuth(null); // Force UI to "not signed in" state
                 window.moneyManager.loadRecords();
             }
         }
 
-        // Expose Firebase objects globally for script.js
+        // Expose Firebase objects and functions globally for script.js
         window.firebase = {
             app: window.firebaseApp,
             db: window.db,
@@ -76,10 +99,15 @@
             updateDoc,
             doc,
             getDocs,
-            getDoc,
-            appId // Expose appId
+            writeBatch, // Expose writeBatch for batch operations
+            deleteDoc,  // Expose deleteDoc for deleting records
+            GoogleAuthProvider, // Expose GoogleAuthProvider for sign-in
+            signInWithPopup,    // Expose signInWithPopup
+            signOut,            // Expose signOut
+            appId // Expose appId for constructing collection paths
         };
     </script>
+    <!-- SheetJS (xlsx) for client-side Excel parsing -->
     <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body>
@@ -87,57 +115,76 @@
         <header>
             <h1>💰 Money Lending Manager</h1>
             <p class="subtitle">Track and manage your lending records</p>
-            <p class="user-id-display" id="userIdDisplay">User ID: Loading...</p>
+            <!-- Display user ID/Email for debugging/identification -->
+            <p class="user-id-display" id="userIdDisplay">User: Not Signed In</p>
+            <div class="auth-buttons">
+                <button id="signInGoogleBtn" class="auth-btn google-btn">Sign in with Google</button>
+                <button id="signOutBtn" class="auth-btn signout-btn" style="display:none;">Sign Out</button>
+            </div>
         </header>
 
-        <div class="stats-section">
-            <div class="stat-card">
-                <h3>Total Amount</h3>
-                <div class="stat-value" id="totalAmount">₹0</div>
+        <!-- Content sections that require authentication -->
+        <div id="authenticatedContent" style="display:none;">
+            <div class="stats-section">
+                <div class="stat-card">
+                    <h3>Total Amount</h3>
+                    <div class="stat-value" id="totalAmount">₹0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Paid Amount</h3>
+                    <div class="stat-value" id="paidAmount">₹0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Remaining</h3>
+                    <div class="stat-value" id="remainingAmount">₹0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Paid Loans</h3>
+                    <div class="stat-value" id="paidCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Pending Loans</h3>
+                    <div class="stat-value" id="pendingCount">0</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3>Paid Amount</h3>
-                <div class="stat-value" id="paidAmount">₹0</div>
+
+            <div class="upload-section">
+                <h2>Upload Excel File</h2>
+                <p>Upload your lending records (First Time Only)</p>
+                <input type="file" id="fileInput" accept=".xlsx,.xls" />
+                <button id="uploadBtn">Upload Excel File</button>
+                <!-- Status message for uploads/errors -->
+                <div id="uploadStatus"></div>
             </div>
-            <div class="stat-card">
-                <h3>Remaining</h3>
-                <div class="stat-value" id="remainingAmount">₹0</div>
+
+            <div class="search-section">
+                <h2>Search Records</h2>
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Type name to search..." />
+                    <!-- Search results will be displayed here -->
+                    <div id="searchResults"></div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3>Paid Loans</h3>
-                <div class="stat-value" id="paidCount">0</div>
-            </div>
-            <div class="stat-card">
-                <h3>Pending Loans</h3>
-                <div class="stat-value" id="pendingCount">0</div>
+
+            <div class="records-section">
+                <div class="section-header">
+                    <h2>All Records</h2>
+                    <!-- Display total number of records -->
+                    <div class="records-count" id="recordsCount">0 records</div>
+                </div>
+                <!-- All records will be listed here -->
+                <div id="recordsList"></div>
+                <div class="clear-data-section">
+                    <button id="clearAllDataBtn" class="clear-data-btn">Clear All My Data</button>
+                </div>
             </div>
         </div>
-
-        <div class="upload-section">
-            <h2>Upload Excel File</h2>
-            <p>Upload your lending records (First Time Only)</p>
-            <input type="file" id="fileInput" accept=".xlsx,.xls" />
-            <button id="uploadBtn">Upload Excel File</button>
-            <div id="uploadStatus"></div>
-        </div>
-
-        <div class="search-section">
-            <h2>Search Records</h2>
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Type name to search..." />
-                <div id="searchResults"></div>
-            </div>
-        </div>
-
-        <div class="records-section">
-            <div class="section-header">
-                <h2>All Records</h2>
-                <div class="records-count" id="recordsCount">0 records</div>
-            </div>
-            <div id="recordsList"></div>
+        <div id="notAuthenticatedMessage" class="message-card">
+            <p>Please sign in to manage your lending records.</p>
         </div>
     </div>
 
+    <!-- Custom Modal for Alerts/Confirmations (replaces alert/confirm) -->
     <div id="customModal" class="modal">
         <div class="modal-content">
             <span class="close-button">&times;</span>

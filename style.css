@@ -1,28 +1,32 @@
+/* Universal box-sizing for consistent layout */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+/* Body styling: font, background, minimum height, padding, and text color */
 body {
     font-family: 'Poppins', sans-serif;
     background-color: #f5f7fa;
-    min-height: 100vh;
+    min-height: 100vh; /* Full viewport height */
     padding: 20px;
     color: #333;
 }
 
+/* Main container for the application content */
 .container {
-    max-width: 1000px;
-    margin: 0 auto;
+    max-width: 1000px; /* Maximum width for desktop */
+    margin: 0 auto; /* Center the container */
     background: white;
     border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05); /* Soft shadow for depth */
+    overflow: hidden; /* Ensures rounded corners are respected by children */
 }
 
+/* Header section styling */
 header {
-    background: linear-gradient(135deg, #4e54c8, #8f94fb);
+    background: linear-gradient(135deg, #4e54c8, #8f94fb); /* Gradient background */
     color: white;
     text-align: center;
     padding: 30px 20px;
@@ -41,20 +45,81 @@ header .subtitle {
     margin-top: 8px;
 }
 
+/* Styling for the user ID/Email display in the header */
 .user-id-display {
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 10px;
-    word-break: break-all; /* Ensure long IDs wrap */
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 15px;
+    word-break: break-all; /* Ensures long IDs/emails wrap correctly */
+    font-weight: 500;
 }
 
+/* Authentication buttons container */
+.auth-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+/* General style for auth buttons */
+.auth-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Google Sign-In button specific style */
+.google-btn {
+    background-color: #db4437; /* Google red */
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.google-btn:hover {
+    background-color: #c23321;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* Sign Out button specific style */
+.signout-btn {
+    background-color: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+.signout-btn:hover {
+    background-color: #e0e0e0;
+}
+
+/* Message card for non-authenticated users */
+.message-card {
+    padding: 40px 20px;
+    text-align: center;
+    font-size: 1.2rem;
+    color: #555;
+    background-color: #f0f4f8;
+    border-radius: 8px;
+    margin: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+
+/* Statistics section layout using CSS Grid for responsiveness */
 .stats-section {
     display: grid;
+    /* Responsive columns: auto-fit creates as many columns as fit, minmax sets min/max width */
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 15px;
+    gap: 15px; /* Spacing between stat cards */
     padding: 0 20px 20px;
 }
 
+/* Individual statistic card styling */
 .stat-card {
     background: white;
     border-radius: 8px;
@@ -73,18 +138,21 @@ header .subtitle {
 .stat-value {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #4e54c8;
+    color: #4e54c8; /* Primary color for values */
 }
 
+/* Common padding and border for main sections */
 .upload-section, .search-section, .records-section {
     padding: 20px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #eee; /* Separator line */
 }
 
+/* Remove bottom border for the last section */
 .upload-section:last-child, .search-section:last-child, .records-section:last-child {
     border-bottom: none;
 }
 
+/* Common heading style for sections */
 h2 {
     color: #444;
     margin-bottom: 15px;
@@ -92,6 +160,7 @@ h2 {
     font-weight: 500;
 }
 
+/* Header for the records list, with count display */
 .section-header {
     display: flex;
     justify-content: space-between;
@@ -104,9 +173,10 @@ h2 {
     color: #666;
 }
 
+/* File input styling */
 #fileInput {
     padding: 12px;
-    border: 2px dashed #8f94fb;
+    border: 2px dashed #8f94fb; /* Dashed border with primary color */
     border-radius: 8px;
     width: 100%;
     margin-bottom: 15px;
@@ -119,6 +189,7 @@ h2 {
     background: #f0f2ff;
 }
 
+/* Upload button styling */
 #uploadBtn {
     background: #4e54c8;
     color: white;
@@ -136,10 +207,12 @@ h2 {
     background: #4348b1;
 }
 
+/* Search input container for positioning search results */
 .search-container {
     position: relative;
 }
 
+/* Search input field styling */
 #searchInput {
     width: 100%;
     padding: 12px 15px;
@@ -152,25 +225,27 @@ h2 {
 
 #searchInput:focus {
     outline: none;
-    border-color: #4e54c8;
+    border-color: #4e54c8; /* Highlight on focus */
 }
 
+/* Search results dropdown container */
 #searchResults {
     position: absolute;
-    top: 100%;
+    top: 100%; /* Position below the search input */
     left: 0;
     right: 0;
     background: white;
     border: 1px solid #ddd;
-    border-top: none;
-    border-radius: 0 0 8px 8px;
+    border-top: none; /* No top border as it connects to the input */
+    border-radius: 0 0 8px 8px; /* Rounded corners only at the bottom */
     max-height: 300px;
-    overflow-y: auto;
-    z-index: 1000;
-    display: none;
+    overflow-y: auto; /* Enable scrolling for many results */
+    z-index: 1000; /* Ensure it appears above other content */
+    display: none; /* Hidden by default */
     box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
+/* Styling for individual search result items and main record list items */
 .search-result-item, .record-item {
     padding: 15px;
     border-bottom: 1px solid #eee;
@@ -181,15 +256,15 @@ h2 {
 }
 
 .search-result-item:hover, .record-item:hover {
-    background: #f8f9ff;
+    background: #f8f9ff; /* Subtle hover effect */
 }
 
 .search-result-item:last-child, .record-item:last-child {
-    border-bottom: none;
+    border-bottom: none; /* Remove border for the last item */
 }
 
 .record-info {
-    flex-grow: 1;
+    flex-grow: 1; /* Allows info to take available space */
 }
 
 .record-name {
@@ -204,24 +279,28 @@ h2 {
     margin-top: 5px;
 }
 
+/* Styling for the status badge (Pending/Paid) */
 .record-status {
     padding: 5px 12px;
-    border-radius: 15px;
+    border-radius: 15px; /* Pill shape */
     font-size: 12px;
     font-weight: 500;
     text-transform: uppercase;
 }
 
+/* Specific colors for pending status */
 .status-pending {
-    background: #ffebee;
-    color: #d32f2f;
+    background: #ffebee; /* Light red background */
+    color: #d32f2f; /* Darker red text */
 }
 
+/* Specific colors for paid status */
 .status-paid {
-    background: #e8f5e9;
-    color: #2e7d32;
+    background: #e8f5e9; /* Light green background */
+    color: #2e7d32; /* Darker green text */
 }
 
+/* Mark as Paid button styling */
 .mark-paid-btn {
     background: #4e54c8;
     color: white;
@@ -243,15 +322,17 @@ h2 {
     cursor: not-allowed;
 }
 
+/* Styling for the upload/status message div */
 #uploadStatus {
     margin-top: 15px;
     padding: 12px;
     border-radius: 5px;
     text-align: center;
     font-weight: 500;
-    display: none;
+    display: none; /* Hidden by default */
 }
 
+/* Specific colors for different status types */
 .success {
     background: #e8f5e9;
     color: #2e7d32;
@@ -273,30 +354,63 @@ h2 {
     display: block;
 }
 
-/* Custom Modal Styles */
+.info { /* New style for informational messages */
+    background: #fff3e0;
+    color: #ff9800;
+    border: 1px solid #ffcc80;
+    display: block;
+}
+
+/* Clear Data Button Section */
+.clear-data-section {
+    padding: 20px;
+    text-align: center;
+    border-top: 1px solid #eee;
+    margin-top: 20px;
+}
+
+.clear-data-btn {
+    background: #f44336; /* Red for destructive action */
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s;
+    font-family: inherit;
+    font-weight: 500;
+}
+
+.clear-data-btn:hover {
+    background: #d32f2f;
+}
+
+
+/* Custom Modal Styles (replaces browser's alert/confirm) */
 .modal {
     display: none; /* Hidden by default */
     position: fixed; /* Stay in place */
-    z-index: 1001; /* Sit on top */
+    z-index: 1001; /* Sit on top of everything */
     left: 0;
     top: 0;
     width: 100%; /* Full width */
     height: 100%; /* Full height */
     overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background-color: rgba(0,0,0,0.4); /* Black semi-transparent background */
+    display: flex; /* Use flexbox for centering content */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
 }
 
 .modal-content {
     background-color: #fefefe;
-    margin: auto;
+    margin: auto; /* Auto margins help with centering */
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    width: 90%;
-    max-width: 400px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* Soft shadow */
+    width: 90%; /* Responsive width */
+    max-width: 400px; /* Max width for larger screens */
     text-align: center;
     position: relative;
 }
@@ -363,18 +477,24 @@ h2 {
 }
 
 
+/* Responsive Adjustments */
 @media (max-width: 768px) {
     .stats-section {
+        /* On medium screens, show 2 columns */
         grid-template-columns: repeat(2, 1fr);
     }
 
     header h1 {
-        font-size: 2rem;
+        font-size: 2rem; /* Smaller heading on smaller screens */
     }
 }
 
 @media (max-width: 480px) {
     .stats-section {
+        /* On small screens (phones), show 1 column */
         grid-template-columns: 1fr;
+    }
+    .auth-buttons {
+        flex-direction: column; /* Stack buttons vertically on small screens */
     }
 }

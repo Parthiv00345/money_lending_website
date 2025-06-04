@@ -4,40 +4,131 @@
 
 class MoneyLendingManager {
     constructor() {
-        this.records = [];
-        this.unsubscribe = null; // To store the Firestore unsubscribe function
+        this.records = []; // Stores all lending records
+        this.unsubscribe = null; // To store the Firestore unsubscribe function for real-time updates
+        this.searchTimeout = null; // For debouncing the search input
         this.init();
     }
 
+    // Initializes the application by binding event listeners
     init() {
         this.bindEvents();
-        // Load records will be called once Firebase auth is ready
-        // (handled by the onAuthStateChanged listener in index.html)
+        // The loadRecords() function is called by the onAuthStateChanged listener in index.html
+        // once Firebase authentication is ready.
     }
 
+    // Binds event listeners to various UI elements
     bindEvents() {
         const uploadBtn = document.getElementById('uploadBtn');
         const fileInput = document.getElementById('fileInput');
         const searchInput = document.getElementById('searchInput');
+        const clearAllDataBtn = document.getElementById('clearAllDataBtn');
+        const signInGoogleBtn = document.getElementById('signInGoogleBtn'); // New button
+        const signOutBtn = document.getElementById('signOutBtn');           // New button
 
+        // Event listener for the upload button
         uploadBtn.addEventListener('click', () => this.uploadFile());
-        searchInput.addEventListener('input', (e) => this.searchRecords(e.target.value));
 
-        // Hide search results when clicking outside
+        // Event listener for the search input with debouncing
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(this.searchTimeout); // Clear previous timeout
+            this.searchTimeout = setTimeout(() => {
+                this.searchRecords(e.target.value); // Execute search after a delay
+            }, 300); // 300ms debounce time
+        });
+
+        // Event listener for the clear all data button
+        clearAllDataBtn.addEventListener('click', () => this.confirmClearAllData());
+
+        // Event listeners for authentication buttons
+        signInGoogleBtn.addEventListener('click', () => this.handleGoogleSignIn());
+        signOutBtn.addEventListener('click', () => this.handleSignOut());
+
+        // Hide search results when clicking outside the search container
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.search-container')) {
                 document.getElementById('searchResults').style.display = 'none';
             }
         });
 
-        // Modal event listeners
+        // Event listeners for the custom modal (alert/confirm dialog)
         document.querySelector('.close-button').addEventListener('click', () => this.hideModal());
         document.getElementById('modalOkBtn').addEventListener('click', () => this.hideModal());
     }
 
     /**
-     * Displays a custom modal message.
-     * @param {string} message - The message to display.
+     * Toggles the visibility of UI elements based on authentication status.
+     * @param {firebase.User} user - The authenticated Firebase user object, or null if logged out.
+     */
+    toggleUIForAuth(user) {
+        const authenticatedContent = document.getElementById('authenticatedContent');
+        const notAuthenticatedMessage = document.getElementById('notAuthenticatedMessage');
+        const signInGoogleBtn = document.getElementById('signInGoogleBtn');
+        const signOutBtn = document.getElementById('signOutBtn');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+
+        if (user && user.uid) { // User is logged in
+            authenticatedContent.style.display = 'block';
+            notAuthenticatedMessage.style.display = 'none';
+            signInGoogleBtn.style.display = 'none';
+            signOutBtn.style.display = 'inline-block';
+            userIdDisplay.textContent = `User: ${user.email || 'Guest User'}`; // Display email if available, else "Guest User"
+        } else { // User is logged out
+            authenticatedContent.style.display = 'none';
+            notAuthenticatedMessage.style.display = 'block';
+            signInGoogleBtn.style.display = 'inline-block';
+            signOutBtn.style.display = 'none';
+            userIdDisplay.textContent = 'User: Not Signed In';
+            this.records = []; // Clear records when logged out
+            this.updateStatistics(); // Update stats to show zeros
+            this.displayAllRecords(); // Clear displayed records
+            if (this.unsubscribe) {
+                this.unsubscribe(); // Stop listening for data
+                this.unsubscribe = null;
+            }
+        }
+    }
+
+    /**
+     * Handles Google Sign-In using Firebase.
+     */
+    async handleGoogleSignIn() {
+        if (!window.firebase.auth) {
+            this.showStatus('Firebase Auth not initialized. Please check your Firebase config.', 'error');
+            return;
+        }
+        try {
+            const provider = new window.firebase.GoogleAuthProvider();
+            await window.firebase.signInWithPopup(window.firebase.auth, provider);
+            this.showStatus('Signed in with Google successfully!', 'success');
+            // onAuthStateChanged listener will handle UI update and data loading
+        } catch (error) {
+            console.error("Error during Google Sign-In:", error);
+            this.showStatus(`Google Sign-In failed: ${error.message}`, 'error');
+        }
+    }
+
+    /**
+     * Handles user sign-out from Firebase.
+     */
+    async handleSignOut() {
+        if (!window.firebase.auth) {
+            this.showStatus('Firebase Auth not initialized.', 'error');
+            return;
+        }
+        try {
+            await window.firebase.signOut(window.firebase.auth);
+            this.showStatus('Signed out successfully!', 'success');
+            // onAuthStateChanged listener will handle UI update and data clearing
+        } catch (error) {
+            console.error("Error during sign-out:", error);
+            this.showStatus(`Sign out failed: ${error.message}`, 'error');
+        }
+    }
+
+    /**
+     * Displays a custom modal message, replacing browser's alert/confirm.
+     * @param {string} message - The message to display in the modal.
      * @param {string} type - 'alert' for OK button, 'confirm' for Confirm/Cancel buttons.
      * @returns {Promise<boolean>} Resolves to true for confirm, false for cancel, or always true for alert.
      */
@@ -48,42 +139,48 @@ class MoneyLendingManager {
         const modalCancelBtn = document.getElementById('modalCancelBtn');
         const modalOkBtn = document.getElementById('modalOkBtn');
 
-        modalMessage.textContent = message;
+        modalMessage.textContent = message; // Set the message text
 
+        // Hide all buttons initially
         modalConfirmBtn.style.display = 'none';
         modalCancelBtn.style.display = 'none';
         modalOkBtn.style.display = 'none';
 
         return new Promise(resolve => {
             if (type === 'confirm') {
+                // Show Confirm and Cancel buttons for confirmation dialogs
                 modalConfirmBtn.style.display = 'inline-block';
                 modalCancelBtn.style.display = 'inline-block';
                 modalConfirmBtn.onclick = () => {
                     this.hideModal();
-                    resolve(true);
+                    resolve(true); // Resolve with true if confirmed
                 };
                 modalCancelBtn.onclick = () => {
                     this.hideModal();
-                    resolve(false);
+                    resolve(false); // Resolve with false if cancelled
                 };
-            } else { // 'alert'
+            } else { // Default to 'alert' type
+                // Show only the OK button for alert messages
                 modalOkBtn.style.display = 'inline-block';
                 modalOkBtn.onclick = () => {
                     this.hideModal();
-                    resolve(true);
+                    resolve(true); // Always resolve with true for alerts
                 };
             }
-            modal.style.display = 'block';
+            modal.style.display = 'flex'; // Display the modal (using flex for centering)
         });
     }
 
+    // Hides the custom modal
     hideModal() {
         document.getElementById('customModal').style.display = 'none';
     }
 
+    // Handles the Excel file upload process
     async uploadFile() {
+        // Check if Firebase is ready and user is authenticated
         if (!window.isAuthReady || !window.db || !window.userId) {
-            this.showStatus('Firebase not ready. Please wait a moment.', 'error');
+            this.showStatus('Please sign in to upload records.', 'error');
             return;
         }
 
@@ -95,40 +192,47 @@ class MoneyLendingManager {
             return;
         }
 
-        this.showStatus('Processing file...', 'loading');
+        this.showStatus('Processing file...', 'loading'); // Show loading status
 
         try {
-            const data = await this.readExcelFile(file);
+            const data = await this.readExcelFile(file); // Read and parse Excel data
             if (data.length === 0) {
                 this.showStatus('No data found in the Excel file.', 'error');
                 return;
             }
 
+            // Get a reference to the Firestore collection for the current user's records
             const recordsCollectionRef = window.firebase.collection(window.firebase.db, `artifacts/${window.firebase.appId}/users/${window.userId}/records`);
-            let uploadedCount = 0;
+            const batch = window.firebase.writeBatch(window.firebase.db); // Initialize a new Firestore batch
 
+            let uploadedCount = 0;
             for (const row of data) {
+                // Prepare record data, ensuring 'paid' status is 'yes' or 'no'
                 const record = {
-                    name: row.Name || row.name || '',
-                    amount: parseFloat(row.Amount || row.amount || 0),
-                    paid: (row.Paid || row.paid || row['Paid Back'] || '').toLowerCase() === 'yes' ? 'yes' : 'no',
-                    timestamp: new Date(), // Add timestamp
+                    name: String(row.Name || row.name || '').trim(), // Ensure name is string and trimmed
+                    amount: parseFloat(row.Amount || row.amount || 0), // Ensure amount is a number
+                    paid: (String(row.Paid || row.paid || row['Paid Back'] || '')).toLowerCase() === 'yes' ? 'yes' : 'no',
+                    timestamp: new Date(), // Add a timestamp for ordering/tracking
                 };
 
-                // Add record to Firestore
-                await window.firebase.addDoc(recordsCollectionRef, record);
+                // Create a new document reference and add it to the batch
+                const newDocRef = window.firebase.doc(recordsCollectionRef);
+                batch.set(newDocRef, record); // Add the set operation to the batch
                 uploadedCount++;
             }
 
+            await batch.commit(); // Commit the batch of write operations to Firestore
+
             this.showStatus(`Successfully uploaded ${uploadedCount} records!`, 'success');
-            fileInput.value = ''; // Clear the file input
-            // loadRecords will be triggered by the onSnapshot listener
+            fileInput.value = ''; // Clear the file input field
+            // The onSnapshot listener will automatically trigger loadRecords() after batch commit
         } catch (error) {
             this.showStatus('Error uploading file: ' + error.message, 'error');
             console.error('Upload error:', error);
         }
     }
 
+    // Reads and parses an Excel file using SheetJS library
     readExcelFile(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -136,56 +240,64 @@ class MoneyLendingManager {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
+                    const sheetName = workbook.SheetNames[0]; // Get the first sheet
                     const worksheet = workbook.Sheets[sheetName];
-                    const json = XLSX.utils.sheet_to_json(worksheet);
+                    const json = XLSX.utils.sheet_to_json(worksheet); // Convert sheet to JSON array
                     resolve(json);
                 } catch (error) {
-                    reject(new Error('Failed to read Excel file. Make sure it is a valid .xlsx or .xls file. ' + error.message));
+                    reject(new Error('Failed to read Excel file. Please ensure it is a valid .xlsx or .xls file. ' + error.message));
                 }
             };
             reader.onerror = (error) => reject(new Error('File reading error: ' + error.message));
-            reader.readAsArrayBuffer(file);
+            reader.readAsArrayBuffer(file); // Read file as ArrayBuffer
         });
     }
 
+    // Loads records from Firestore and sets up a real-time listener
     loadRecords() {
+        // Only load records if Firebase is ready and a user is logged in
         if (!window.isAuthReady || !window.db || !window.userId) {
-            console.log("Firebase not ready for loading records. Waiting for auth...");
-            document.getElementById('userIdDisplay').textContent = 'User ID: Loading...';
+            console.log("Firebase not ready or no user logged in for loading records.");
+            this.records = []; // Ensure records are cleared if not logged in
+            this.displayAllRecords();
+            this.updateStatistics();
             return;
         }
 
-        document.getElementById('userIdDisplay').textContent = `User ID: ${window.userId}`;
-
-        // Unsubscribe from previous listener if it exists
+        // Unsubscribe from any previous real-time listener to prevent multiple listeners
         if (this.unsubscribe) {
             this.unsubscribe();
         }
 
+        // Get a reference to the user's records collection
         const recordsCollectionRef = window.firebase.collection(window.firebase.db, `artifacts/${window.firebase.appId}/users/${window.userId}/records`);
-        const q = window.firebase.query(recordsCollectionRef);
+        const q = window.firebase.query(recordsCollectionRef); // Create a query (can add orderBy, where clauses here)
 
+        // Set up a real-time listener using onSnapshot
         this.unsubscribe = window.firebase.onSnapshot(q, (snapshot) => {
-            this.records = [];
+            this.records = []; // Clear current records
             snapshot.forEach((doc) => {
+                // Add each document's data and its ID to the records array
                 this.records.push({ id: doc.id, ...doc.data() });
             });
             console.log("Records loaded/updated from Firestore:", this.records.length);
-            this.displayAllRecords();
-            this.updateStatistics();
+            this.displayAllRecords(); // Update the displayed list
+            this.updateStatistics(); // Update summary statistics
         }, (error) => {
             console.error("Error fetching records from Firestore:", error);
             this.showStatus('Error loading records: ' + error.message, 'error');
         });
     }
 
+    // Updates the statistics displayed on the dashboard
     updateStatistics() {
+        // Calculate total, paid, and remaining amounts
         const totalAmount = this.records.reduce((sum, record) => sum + parseFloat(record.amount), 0);
         const paidRecords = this.records.filter(record => record.paid === 'yes');
         const paidAmount = paidRecords.reduce((sum, record) => sum + parseFloat(record.amount), 0);
         const remainingAmount = totalAmount - paidAmount;
 
+        // Update UI elements with calculated statistics
         document.getElementById('totalAmount').textContent = `₹${totalAmount.toFixed(2)}`;
         document.getElementById('paidAmount').textContent = `₹${paidAmount.toFixed(2)}`;
         document.getElementById('remainingAmount').textContent = `₹${remainingAmount.toFixed(2)}`;
@@ -194,14 +306,16 @@ class MoneyLendingManager {
         document.getElementById('recordsCount').textContent = `${this.records.length} records`;
     }
 
+    // Filters and displays records based on a search query
     searchRecords(queryText) {
         const searchResults = document.getElementById('searchResults');
 
         if (!queryText.trim()) {
-            searchResults.style.display = 'none';
+            searchResults.style.display = 'none'; // Hide results if query is empty
             return;
         }
 
+        // Filter records where the name includes the query text (case-insensitive)
         const filteredRecords = this.records.filter(record =>
             record.name.toLowerCase().includes(queryText.toLowerCase())
         );
@@ -209,14 +323,16 @@ class MoneyLendingManager {
         if (filteredRecords.length === 0) {
             searchResults.innerHTML = '<div class="search-result-item">No results found</div>';
         } else {
+            // Generate HTML for filtered records and display them
             searchResults.innerHTML = filteredRecords.map(record =>
-                this.createRecordHTML(record, true)
+                this.createRecordHTML(record, true) // Pass true for search result styling
             ).join('');
         }
 
-        searchResults.style.display = 'block';
+        searchResults.style.display = 'block'; // Show the search results container
     }
 
+    // Displays all records in the main records list
     displayAllRecords() {
         const recordsList = document.getElementById('recordsList');
 
@@ -225,18 +341,27 @@ class MoneyLendingManager {
             return;
         }
 
-        // Sort records: pending first, then paid. Within each, sort by name.
+        // Sort records: pending first, then paid. Within each group, sort alphabetically by name.
         const sortedRecords = [...this.records].sort((a, b) => {
+            // Pending records come before paid records
             if (a.paid === 'no' && b.paid === 'yes') return -1;
             if (a.paid === 'yes' && b.paid === 'no') return 1;
+            // For records with the same status, sort by name
             return a.name.localeCompare(b.name);
         });
 
+        // Generate HTML for all sorted records and display them
         recordsList.innerHTML = sortedRecords.map(record =>
-            this.createRecordHTML(record, false)
+            this.createRecordHTML(record, false) // Pass false for general record list styling
         ).join('');
     }
 
+    /**
+     * Creates the HTML string for a single record item.
+     * @param {object} record - The record object from Firestore.
+     * @param {boolean} isSearchResult - True if rendering for search results, false for main list.
+     * @returns {string} The HTML string for the record.
+     */
     createRecordHTML(record, isSearchResult) {
         const containerClass = isSearchResult ? 'search-result-item' : 'record-item';
         const statusClass = record.paid === 'yes' ? 'status-paid' : 'status-pending';
@@ -260,38 +385,102 @@ class MoneyLendingManager {
         `;
     }
 
+    // Marks a specific record as paid in Firestore
     async markAsPaid(recordId) {
+        // Ensure Firebase is ready and user is logged in
         if (!window.db || !window.userId) {
-            this.showStatus('Firebase not ready. Cannot update record.', 'error');
+            this.showStatus('Please sign in to update records.', 'error');
             return;
         }
 
+        // Get a reference to the specific document to update
         const recordRef = window.firebase.doc(window.firebase.db, `artifacts/${window.firebase.appId}/users/${window.userId}/records`, recordId);
 
         try {
+            // Update the 'paid' field to 'yes'
             await window.firebase.updateDoc(recordRef, {
                 paid: 'yes'
             });
             this.showStatus(`Record marked as paid!`, 'success');
-            // loadRecords will be triggered by the onSnapshot listener
+            // The onSnapshot listener will automatically re-load and update the UI
         } catch (error) {
             this.showStatus('Error updating record: ' + error.message, 'error');
             console.error('Mark paid error:', error);
         }
     }
 
+    // Prompts the user for confirmation before clearing all data
+    async confirmClearAllData() {
+        if (!window.userId) {
+            this.showStatus('Please sign in to clear data.', 'error');
+            return;
+        }
+        const confirmed = await this.showModal(
+            'Are you sure you want to delete ALL your lending records? This action cannot be undone.',
+            'confirm'
+        );
+
+        if (confirmed) {
+            this.clearAllData();
+        } else {
+            this.showStatus('Data clearing cancelled.', 'info');
+        }
+    }
+
+    // Deletes all records for the current user from Firestore
+    async clearAllData() {
+        if (!window.isAuthReady || !window.db || !window.userId) {
+            this.showStatus('Firebase not ready or no user logged in. Cannot clear data.', 'error');
+            return;
+        }
+
+        this.showStatus('Clearing all records...', 'loading');
+
+        try {
+            const recordsCollectionRef = window.firebase.collection(window.firebase.db, `artifacts/${window.firebase.appId}/users/${window.userId}/records`);
+            const q = window.firebase.query(recordsCollectionRef);
+            const querySnapshot = await window.firebase.getDocs(q); // Get all documents in the collection
+
+            if (querySnapshot.empty) {
+                this.showStatus('No records to clear.', 'info');
+                return;
+            }
+
+            const batch = window.firebase.writeBatch(window.firebase.db); // Use a batch for efficient deletion
+            let deletedCount = 0;
+            querySnapshot.forEach((doc) => {
+                batch.delete(doc.ref); // Add each document to the batch for deletion
+                deletedCount++;
+            });
+
+            await batch.commit(); // Commit the batch delete operation
+
+            this.showStatus(`Successfully cleared ${deletedCount} records.`, 'success');
+            // The onSnapshot listener will automatically update the UI to show an empty list
+        } catch (error) {
+            this.showStatus('Error clearing data: ' + error.message, 'error');
+            console.error('Clear data error:', error);
+        }
+    }
+
+    /**
+     * Displays a temporary status message to the user.
+     * @param {string} message - The message to display.
+     * @param {string} type - 'success', 'error', 'loading', or 'info' for styling.
+     */
     showStatus(message, type) {
         const statusDiv = document.getElementById('uploadStatus');
         statusDiv.textContent = message;
-        statusDiv.className = type;
-        statusDiv.style.display = 'block';
+        statusDiv.className = type; // Apply CSS class for styling
+        statusDiv.style.display = 'block'; // Make sure it's visible
 
+        // Hide the status message after 5 seconds
         setTimeout(() => {
             statusDiv.style.display = 'none';
         }, 5000);
     }
 }
 
-// Initialize the app
+// Initialize the MoneyLendingManager application
 const moneyManager = new MoneyLendingManager();
-window.moneyManager = moneyManager; // Expose globally for onclick handlers
+window.moneyManager = moneyManager; // Expose globally to allow onclick handlers to call its methods
