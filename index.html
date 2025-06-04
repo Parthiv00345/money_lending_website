@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Lending Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, updateDoc, doc, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Global variables for Firebase instances (will be initialized in script.js)
+        window.firebaseApp = null;
+        window.db = null;
+        window.auth = null;
+        window.userId = null;
+        window.isAuthReady = false;
+
+        // Initialize Firebase and Auth
+        const firebaseConfig = {
+          apiKey: "AIzaSyDhL-4ajbXCjijsciUgRa0liC62lpvakrU", // <--- REPLACE WITH YOUR ACTUAL FIREBASE API KEY
+          authDomain: "moneylendingapp-776c6.firebaseapp.com", // <--- REPLACE WITH YOUR ACTUAL FIREBASE AUTH DOMAIN
+          projectId: "moneylendingapp-776c6",   // <--- REPLACE WITH YOUR ACTUAL FIREBASE PROJECT ID
+          storageBucket: "moneylendingapp-776c6.firebasestorage.app",
+          messagingSenderId: "1047951189125",
+          appId: "1:1047951189125:web:64e16139e7edfdd63bf5ec"
+        };
+        const appId = firebaseConfig.appId || 'default-app-id'; // Use Firebase app ID for unique collection paths
+
+        if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey !== "YOUR_API_KEY") { // Check if config is actually set
+            window.firebaseApp = initializeApp(firebaseConfig);
+            window.db = getFirestore(window.firebaseApp);
+            window.auth = getAuth(window.firebaseApp);
+
+            onAuthStateChanged(window.auth, async (user) => {
+                if (user) {
+                    window.userId = user.uid;
+                    console.log("Firebase Auth Ready. User ID:", window.userId);
+                } else {
+                    try {
+                        await signInAnonymously(window.auth);
+                        window.userId = window.auth.currentUser.uid;
+                        console.log("Signed in anonymously. User ID:", window.userId);
+                    } catch (error) {
+                        console.error("Error during anonymous sign-in:", error);
+                        window.userId = crypto.randomUUID(); // Fallback to a random UUID if anonymous sign-in fails
+                        console.warn("Using random UUID as userId due to auth error:", window.userId);
+                    }
+                }
+                window.isAuthReady = true; // Mark auth as ready
+                // Trigger initial load after auth is ready
+                if (window.moneyManager) {
+                    window.moneyManager.loadRecords();
+                }
+            });
+        } else {
+            console.warn("Firebase config not found or not correctly set. Running in a limited mode without persistent storage.");
+            window.userId = crypto.randomUUID(); // Generate a random ID for local testing without Firebase
+            window.isAuthReady = true;
+            if (window.moneyManager) {
+                window.moneyManager.loadRecords();
+            }
+        }
+
+        // Expose Firebase objects globally for script.js
+        window.firebase = {
+            app: window.firebaseApp,
+            db: window.db,
+            auth: window.auth,
+            collection,
+            addDoc,
+            query,
+            onSnapshot,
+            updateDoc,
+            doc,
+            getDocs,
+            getDoc,
+            appId // Expose appId
+        };
+    </script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Money Lending Manager</h1>
+            <p class="subtitle">Track and manage your lending records</p>
+            <p class="user-id-display" id="userIdDisplay">User ID: Loading...</p>
+        </header>
+
+        <div class="stats-section">
+            <div class="stat-card">
+                <h3>Total Amount</h3>
+                <div class="stat-value" id="totalAmount">₹0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Paid Amount</h3>
+                <div class="stat-value" id="paidAmount">₹0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Remaining</h3>
+                <div class="stat-value" id="remainingAmount">₹0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Paid Loans</h3>
+                <div class="stat-value" id="paidCount">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending Loans</h3>
+                <div class="stat-value" id="pendingCount">0</div>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <h2>Upload Excel File</h2>
+            <p>Upload your lending records (First Time Only)</p>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" />
+            <button id="uploadBtn">Upload Excel File</button>
+            <div id="uploadStatus"></div>
+        </div>
+
+        <div class="search-section">
+            <h2>Search Records</h2>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Type name to search..." />
+                <div id="searchResults"></div>
+            </div>
+        </div>
+
+        <div class="records-section">
+            <div class="section-header">
+                <h2>All Records</h2>
+                <div class="records-count" id="recordsCount">0 records</div>
+            </div>
+            <div id="recordsList"></div>
+        </div>
+    </div>
+
+    <div id="customModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <p id="modalMessage"></p>
+            <div class="modal-buttons">
+                <button id="modalConfirmBtn" class="modal-btn confirm-btn" style="display:none;">Confirm</button>
+                <button id="modalCancelBtn" class="modal-btn cancel-btn" style="display:none;">Cancel</button>
+                <button id="modalOkBtn" class="modal-btn ok-btn" style="display:none;">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
