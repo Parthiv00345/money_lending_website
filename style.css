@@ -54,7 +54,7 @@ header .subtitle {
     font-weight: 500;
 }
 
-/* Authentication buttons container */
+/* Authentication buttons container within header (only for sign-out) */
 .auth-buttons {
     margin-top: 20px;
     display: flex;
@@ -74,18 +74,6 @@ header .subtitle {
     font-family: 'Poppins', sans-serif;
 }
 
-/* Google Sign-In button specific style */
-.google-btn {
-    background-color: #db4437; /* Google red */
-    color: white;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.google-btn:hover {
-    background-color: #c23321;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-}
-
 /* Sign Out button specific style */
 .signout-btn {
     background-color: #f0f0f0;
@@ -97,16 +85,144 @@ header .subtitle {
     background-color: #e0e0e0;
 }
 
-/* Message card for non-authenticated users */
-.message-card {
-    padding: 40px 20px;
+/* NEW: Combined Authentication Section */
+.auth-section {
+    padding: 30px 20px;
     text-align: center;
-    font-size: 1.2rem;
-    color: #555;
-    background-color: #f0f4f8;
-    border-radius: 8px;
+    background-color: #f8f9ff;
+    border-radius: 12px;
     margin: 20px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.auth-section h2 {
+    font-size: 1.5rem;
+    color: #444;
+    margin-bottom: 25px;
+}
+
+.auth-btn.google-btn {
+    background-color: #db4437; /* Google red */
+    color: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    display: flex; /* Use flex to center icon and text */
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Space between icon and text */
+    width: 100%;
+    max-width: 300px; /* Limit width */
+    margin: 0 auto 20px auto; /* Center button */
+    padding: 12px 20px;
+}
+
+.google-btn img.google-icon {
+    width: 20px;
+    height: 20px;
+}
+
+.google-btn:hover {
+    background-color: #c23321;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.or-separator {
+    margin: 20px 0;
+    color: #888;
+    position: relative;
+    font-size: 0.9rem;
+}
+
+.or-separator::before,
+.or-separator::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 40%;
+    height: 1px;
+    background-color: #ddd;
+}
+
+.or-separator::before {
+    left: 0;
+}
+
+.or-separator::after {
+    right: 0;
+}
+
+.email-password-form {
+    margin-top: 20px;
+}
+
+.email-password-form input[type="email"],
+.email-password-form input[type="password"] {
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+
+.email-password-form input[type="email"]:focus,
+.email-password-form input[type="password"]:focus {
+    outline: none;
+    border-color: #4e54c8;
+}
+
+.auth-btn.email-btn {
+    background-color: #007bff; /* A standard blue for email buttons */
+    color: white;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto 10px auto;
+    display: block; /* Make them block to stack */
+    padding: 12px 20px;
+}
+
+.auth-btn.email-btn:hover {
+    background-color: #0056b3;
+}
+
+.auth-btn.secondary-email-btn {
+    background-color: #6c757d; /* A secondary color for sign-up */
+}
+
+.auth-btn.secondary-email-btn:hover {
+    background-color: #5a6268;
+}
+
+
+/* Status messages for authentication actions */
+.status-message {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: 500;
+    text-align: center;
+    display: block; /* Ensure it's always block to take space */
+    min-height: 20px; /* Give it some height even when empty */
+}
+
+/* Specific colors for status messages */
+.status-message.success {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.status-message.error {
+    background: #ffebee;
+    color: #d32f2f;
+    border: 1px solid #ffcdd2;
+}
+
+.status-message.loading {
+    background: #e3f2fd;
+    color: #1565c0;
+    border: 1px solid #bbdefb;
 }
 
 
@@ -322,7 +438,7 @@ h2 {
     cursor: not-allowed;
 }
 
-/* NEW: Style for Mark as Pending button */
+/* Style for Mark as Pending button */
 .mark-pending-btn {
     background: #607d8b; /* Blue-grey color for pending/revert action */
     color: white;
@@ -514,5 +630,9 @@ h2 {
     }
     .auth-buttons {
         flex-direction: column; /* Stack buttons vertically on small screens */
+    }
+    .auth-btn.google-btn,
+    .auth-btn.email-btn {
+        max-width: 100%; /* Full width on small screens */
     }
 }

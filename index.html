@@ -10,7 +10,7 @@
     <script type="module">
         // Import necessary Firebase functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, updateDoc, doc, getDocs, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // Global variables for Firebase instances (will be initialized below)
@@ -44,7 +44,7 @@
             // Listen for authentication state changes
             onAuthStateChanged(window.auth, async (user) => {
                 if (user) {
-                    // User is signed in (could be anonymous or Google)
+                    // User is signed in (could be anonymous, Google, or Email/Password)
                     window.userId = user.uid;
                     window.currentUserEmail = user.email || "Guest User"; // Display email if available, else "Guest User"
                     console.log("Firebase Auth State Changed: User signed in. UID:", window.userId, "Email:", window.currentUserEmail);
@@ -107,6 +107,9 @@
             GoogleAuthProvider, // Expose GoogleAuthProvider for sign-in
             signInWithPopup,    // Expose signInWithPopup
             signOut,            // Expose signOut
+            createUserWithEmailAndPassword, // Expose for email/password sign-up
+            signInWithEmailAndPassword,     // Expose for email/password sign-in
+            fetchSignInMethodsForEmail,     // Expose for account linking
             appId // Expose appId for constructing collection paths
         };
     </script>
@@ -121,12 +124,28 @@
             <!-- Display user ID/Email for debugging/identification -->
             <p class="user-id-display" id="userIdDisplay">User: Not Signed In</p>
             <div class="auth-buttons">
-                <button id="signInGoogleBtn" class="auth-btn google-btn">Sign in with Google</button>
                 <button id="signOutBtn" class="auth-btn signout-btn" style="display:none;">Sign Out</button>
             </div>
         </header>
 
-        <!-- Content sections that require authentication -->
+        <!-- Authentication section - displayed when not logged in -->
+        <div id="authSection" class="auth-section">
+            <h2>Sign In / Sign Up</h2>
+            <button id="signInGoogleBtn" class="auth-btn google-btn">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon" class="google-icon">
+                Sign in with Google
+            </button>
+            <div class="or-separator">OR</div>
+            <div class="email-password-form">
+                <input type="email" id="emailInput" placeholder="Email" autocomplete="email">
+                <input type="password" id="passwordInput" placeholder="Password" autocomplete="current-password">
+                <button id="signInEmailBtn" class="auth-btn email-btn">Sign In with Email</button>
+                <button id="signUpEmailBtn" class="auth-btn email-btn secondary-email-btn">Sign Up with Email</button>
+            </div>
+            <div id="authStatusMessage" class="status-message"></div>
+        </div>
+
+        <!-- Content sections that require authentication - displayed when logged in -->
         <div id="authenticatedContent" style="display:none;">
             <div class="stats-section">
                 <div class="stat-card">
@@ -181,9 +200,6 @@
                     <button id="clearAllDataBtn" class="clear-data-btn">Clear All My Data</button>
                 </div>
             </div>
-        </div>
-        <div id="notAuthenticatedMessage" class="message-card">
-            <p>Please sign in to manage your lending records.</p>
         </div>
     </div>
 

@@ -27,6 +27,14 @@ class MoneyLendingManager {
         const signOutBtn = document.getElementById('signOutBtn');
         const recordsList = document.getElementById('recordsList'); // Get the parent element for event delegation
 
+        // Email/Password elements
+        const emailInput = document.getElementById('emailInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const signInEmailBtn = document.getElementById('signInEmailBtn');
+        const signUpEmailBtn = document.getElementById('signUpEmailBtn'); // Explicit sign-up button
+        const authStatusMessage = document.getElementById('authStatusMessage');
+
+
         // Event listener for the upload button
         uploadBtn.addEventListener('click', () => this.uploadFile());
 
@@ -44,6 +52,11 @@ class MoneyLendingManager {
         // Event listeners for authentication buttons
         signInGoogleBtn.addEventListener('click', () => this.handleGoogleSignIn());
         signOutBtn.addEventListener('click', () => this.handleSignOut());
+
+        // Email/Password authentication event listeners
+        signInEmailBtn.addEventListener('click', () => this.handleEmailSignIn(emailInput.value, passwordInput.value));
+        signUpEmailBtn.addEventListener('click', () => this.handleEmailSignUp(emailInput.value, passwordInput.value));
+
 
         // Hide search results when clicking outside the search container
         document.addEventListener('click', (e) => {
@@ -76,22 +89,21 @@ class MoneyLendingManager {
      */
     toggleUIForAuth(user) {
         const authenticatedContent = document.getElementById('authenticatedContent');
-        const notAuthenticatedMessage = document.getElementById('notAuthenticatedMessage');
-        const signInGoogleBtn = document.getElementById('signInGoogleBtn');
+        const authSection = document.getElementById('authSection'); // The new combined auth section
         const signOutBtn = document.getElementById('signOutBtn');
         const userIdDisplay = document.getElementById('userIdDisplay');
+        const authStatusMessage = document.getElementById('authStatusMessage');
 
         if (user && user.uid) { // User is logged in
+            authSection.style.display = 'none';
             authenticatedContent.style.display = 'block';
-            notAuthenticatedMessage.style.display = 'none';
-            signInGoogleBtn.style.display = 'none';
             signOutBtn.style.display = 'inline-block';
             userIdDisplay.textContent = `User: ${user.email || 'Guest User'}`; // Display email if available, else "Guest User"
+            authStatusMessage.textContent = ''; // Clear auth status message
             console.log("UI updated: Logged in state.");
         } else { // User is logged out
+            authSection.style.display = 'block';
             authenticatedContent.style.display = 'none';
-            notAuthenticatedMessage.style.display = 'block';
-            signInGoogleBtn.style.display = 'inline-block';
             signOutBtn.style.display = 'none';
             userIdDisplay.textContent = 'User: Not Signed In';
             this.records = []; // Clear records when logged out
@@ -111,17 +123,25 @@ class MoneyLendingManager {
      * Handles Google Sign-In using Firebase.
      */
     async handleGoogleSignIn() {
+        const authStatusMessage = document.getElementById('authStatusMessage');
+        authStatusMessage.className = 'status-message'; // Reset class
+        authStatusMessage.textContent = ''; // Clear previous message
+
         if (!window.firebase.auth) {
-            this.showStatus('Firebase Auth not initialized. Please check your Firebase config.', 'error');
+            authStatusMessage.textContent = 'Firebase Auth not initialized. Please check your Firebase config.';
+            authStatusMessage.classList.add('error');
             console.error("handleGoogleSignIn: window.firebase.auth is null.");
             return;
         }
         try {
             console.log("Attempting Google Sign-In popup...");
+            authStatusMessage.textContent = 'Signing in with Google...';
+            authStatusMessage.classList.add('loading');
             const provider = new window.firebase.GoogleAuthProvider();
             const result = await window.firebase.signInWithPopup(window.firebase.auth, provider);
             console.log("Google Sign-In successful!", result.user);
-            this.showStatus('Signed in with Google successfully!', 'success');
+            authStatusMessage.textContent = 'Signed in with Google successfully!';
+            authStatusMessage.classList.add('success');
             // onAuthStateChanged listener will handle UI update and data loading
         } catch (error) {
             console.error("Error during Google Sign-In:", error);
@@ -130,27 +150,32 @@ class MoneyLendingManager {
                 errorMessage = `Error Code: ${error.code}. `;
                 switch (error.code) {
                     case 'auth/popup-closed-by-user':
-                        errorMessage += 'Sign-in popup was closed.';
+                        errorMessage = 'Sign-in popup was closed.';
                         break;
                     case 'auth/cancelled-popup-request':
-                        errorMessage += 'Multiple sign-in attempts too quickly, or popup already open.';
+                        errorMessage = 'Multiple sign-in attempts too quickly, or popup already open.';
                         break;
                     case 'auth/popup-blocked':
-                        errorMessage += 'Browser blocked the sign-in popup. Please allow pop-ups for this site.';
+                        errorMessage = 'Browser blocked the sign-in popup. Please allow pop-ups for this site.';
                         break;
                     case 'auth/network-request-failed':
-                        errorMessage += 'Network error. Check your internet connection.';
+                        errorMessage = 'Network error. Check your internet connection.';
                         break;
                     case 'auth/operation-not-allowed':
-                        errorMessage += 'Google Sign-In is not enabled in your Firebase project. Please enable it in Firebase Console -> Authentication -> Sign-in method.';
+                        errorMessage = 'Google Sign-In is not enabled in your Firebase project. Please enable it in Firebase Console -> Authentication -> Sign-in method.';
+                        break;
+                    case 'auth/account-exists-with-different-credential':
+                        // This is the crucial part for account linking guidance
+                        errorMessage = `An account with this email (${error.customData.email}) already exists using Email/Password. Please sign in with your email and password instead.`;
                         break;
                     default:
-                        errorMessage += error.message;
+                        errorMessage = error.message;
                 }
             } else {
                 errorMessage = error.message;
             }
-            this.showStatus(`Google Sign-In failed: ${errorMessage}`, 'error');
+            authStatusMessage.textContent = `Sign-In failed: ${errorMessage}`;
+            authStatusMessage.classList.add('error');
         }
     }
 
@@ -174,6 +199,122 @@ class MoneyLendingManager {
             this.showStatus(`Sign out failed: ${error.message}`, 'error');
         }
     }
+
+    /**
+     * Handles Email/Password Sign-Up using Firebase.
+     * @param {string} email - User's email.
+     * @param {string} password - User's password.
+     */
+    async handleEmailSignUp(email, password) {
+        const authStatusMessage = document.getElementById('authStatusMessage');
+        authStatusMessage.className = 'status-message'; // Reset class
+        authStatusMessage.textContent = ''; // Clear previous message
+
+        if (!window.firebase.auth) {
+            authStatusMessage.textContent = 'Firebase Auth not initialized.';
+            authStatusMessage.classList.add('error');
+            return;
+        }
+        if (!email || !password) {
+            authStatusMessage.textContent = 'Please enter both email and password.';
+            authStatusMessage.classList.add('error');
+            return;
+        }
+        if (password.length < 6) {
+            authStatusMessage.textContent = 'Password should be at least 6 characters.';
+            authStatusMessage.classList.add('error');
+            return;
+        }
+
+        try {
+            authStatusMessage.textContent = 'Signing up...';
+            authStatusMessage.classList.add('loading');
+            const userCredential = await window.firebase.createUserWithEmailAndPassword(window.firebase.auth, email, password);
+            console.log("Email Sign-Up successful!", userCredential.user);
+            authStatusMessage.textContent = `Signed up as ${userCredential.user.email}!`;
+            authStatusMessage.classList.add('success');
+            // onAuthStateChanged listener will handle UI update and data loading
+        } catch (error) {
+            console.error("Error during Email Sign-Up:", error);
+            let errorMessage = "An unknown error occurred.";
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    errorMessage = 'This email is already in use. Try signing in.';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'Invalid email address.';
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = 'Password is too weak. Please choose a stronger one.';
+                    break;
+                case 'auth/network-request-failed':
+                    errorMessage = 'Network error. Check your internet connection.';
+                    break;
+                case 'auth/operation-not-allowed':
+                    errorMessage = 'Email/Password sign-in is not enabled in your Firebase project. Please enable it in Firebase Console -> Authentication -> Sign-in method.';
+                    break;
+                default:
+                    errorMessage = error.message;
+            }
+            authStatusMessage.textContent = `Sign-up failed: ${errorMessage}`;
+            authStatusMessage.classList.add('error');
+        }
+    }
+
+    /**
+     * Handles Email/Password Sign-In using Firebase.
+     * @param {string} email - User's email.
+     * @param {string} password - User's password.
+     */
+    async handleEmailSignIn(email, password) {
+        const authStatusMessage = document.getElementById('authStatusMessage');
+        authStatusMessage.className = 'status-message'; // Reset class
+        authStatusMessage.textContent = ''; // Clear previous message
+
+        if (!window.firebase.auth) {
+            authStatusMessage.textContent = 'Firebase Auth not initialized.';
+            authStatusMessage.classList.add('error');
+            return;
+        }
+        if (!email || !password) {
+            authStatusMessage.textContent = 'Please enter both email and password.';
+            authStatusMessage.classList.add('error');
+            return;
+        }
+
+        try {
+            authStatusMessage.textContent = 'Signing in...';
+            authStatusMessage.classList.add('loading');
+            const userCredential = await window.firebase.signInWithEmailAndPassword(window.firebase.auth, email, password);
+            console.log("Email Sign-In successful!", userCredential.user);
+            authStatusMessage.textContent = `Signed in as ${userCredential.user.email}!`;
+            authStatusMessage.classList.add('success');
+            // onAuthStateChanged listener will handle UI update and data loading
+        } catch (error) {
+            console.error("Error during Email Sign-In:", error);
+            let errorMessage = "An unknown error occurred.";
+            switch (error.code) {
+                case 'auth/invalid-email':
+                case 'auth/user-not-found':
+                    errorMessage = 'No user found with this email. Please sign up first.';
+                    break;
+                case 'auth/wrong-password':
+                    errorMessage = 'Incorrect password.';
+                    break;
+                case 'auth/user-disabled':
+                    errorMessage = 'This account has been disabled.';
+                    break;
+                case 'auth/network-request-failed':
+                    errorMessage = 'Network error. Check your internet connection.';
+                    break;
+                default:
+                    errorMessage = error.message;
+            }
+            authStatusMessage.textContent = `Sign-in failed: ${errorMessage}`;
+            authStatusMessage.classList.add('error');
+        }
+    }
+
 
     /**
      * Displays a custom modal message, replacing browser's alert/confirm.
