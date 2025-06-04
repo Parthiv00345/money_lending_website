@@ -25,6 +25,7 @@ class MoneyLendingManager {
         const clearAllDataBtn = document.getElementById('clearAllDataBtn');
         const signInGoogleBtn = document.getElementById('signInGoogleBtn');
         const signOutBtn = document.getElementById('signOutBtn');
+        const recordsList = document.getElementById('recordsList'); // Get the parent element for event delegation
 
         // Event listener for the upload button
         uploadBtn.addEventListener('click', () => this.uploadFile());
@@ -50,6 +51,19 @@ class MoneyLendingManager {
                 document.getElementById('searchResults').style.display = 'none';
             }
         });
+
+        // Event delegation for "Mark as Paid" and "Mark as Pending" buttons
+        recordsList.addEventListener('click', (event) => {
+            const target = event.target;
+            if (target.classList.contains('mark-paid-btn')) {
+                const recordId = target.dataset.id; // Get ID from data-id attribute
+                this.markAsPaid(recordId);
+            } else if (target.classList.contains('mark-pending-btn')) {
+                const recordId = target.dataset.id; // Get ID from data-id attribute
+                this.markAsPending(recordId);
+            }
+        });
+
 
         // Event listeners for the custom modal (alert/confirm dialog)
         document.querySelector('.close-button').addEventListener('click', () => this.hideModal());
@@ -408,14 +422,14 @@ class MoneyLendingManager {
         if (record.paid !== 'yes') {
             // If status is pending, show "Mark as Paid" button
             actionButtonHTML = `
-                <button class="mark-paid-btn" onclick="moneyManager.markAsPaid('${record.id}')">
+                <button class="mark-paid-btn" data-id="${record.id}">
                     Mark as Paid
                 </button>
             `;
         } else {
             // If status is paid, show "Mark as Pending" button
             actionButtonHTML = `
-                <button class="mark-pending-btn" onclick="moneyManager.markAsPending('${record.id}')">
+                <button class="mark-pending-btn" data-id="${record.id}">
                     Mark as Pending
                 </button>
             `;
