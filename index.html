@@ -10,7 +10,7 @@
     <script type="module">
         // Import necessary Firebase functions
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, fetchSignInMethodsForEmail, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, onSnapshot, updateDoc, doc, getDocs, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // Global variables for Firebase instances (will be initialized below)
@@ -26,7 +26,7 @@
           apiKey: "AIzaSyDhL-4ajbXCjijsciUgRa0liC62lpvakrU",
           authDomain: "moneylendingapp-776c6.firebaseapp.com",
           projectId: "moneylendingapp-776c6",
-          storageBucket: "moneylendingapp-776c6.firebasestorage.app",
+          storageBucket: "moneylendingapp-776c6.firebaseS3Bucket",
           messagingSenderId: "1047951189125",
           appId: "1:1047951189125:web:64e16139e7edfdd63bf5ec",
           measurementId: "G-T9TR2S1PMN"
@@ -104,12 +104,13 @@
             getDocs,
             writeBatch, // Expose writeBatch for batch operations
             deleteDoc,  // Expose deleteDoc for deleting records
-            GoogleAuthProvider, // Expose GoogleAuthProvider for sign-in
-            signInWithPopup,    // Expose signInWithPopup
+            GoogleAuthProvider, // Expose GoogleAuthProvider for sign-in (still defined, but not used in UI)
+            signInWithPopup,    // Expose signInWithPopup (still defined, but not used in UI)
             signOut,            // Expose signOut
             createUserWithEmailAndPassword, // Expose for email/password sign-up
             signInWithEmailAndPassword,     // Expose for email/password sign-in
             fetchSignInMethodsForEmail,     // Expose for account linking
+            sendPasswordResetEmail, // NEW: Expose sendPasswordResetEmail
             appId // Expose appId for constructing collection paths
         };
     </script>
@@ -119,35 +120,71 @@
 <body>
     <div class="container">
         <header>
+            <!-- Hamburger Menu Icon (NEW) -->
+            <button id="menuBtn" class="menu-btn" aria-label="Open settings menu">
+                <div class="hamburger-line"></div>
+                <div class="hamburger-line"></div>
+                <div class="hamburger-line"></div>
+            </button>
             <h1>💰 Money Lending Manager</h1>
             <p class="subtitle">Track and manage your lending records</p>
-            <!-- Display user ID/Email for debugging/identification -->
-            <p class="user-id-display" id="userIdDisplay">User: Not Signed In</p>
-            <div class="auth-buttons">
-                <button id="signOutBtn" class="auth-btn signout-btn" style="display:none;">Sign Out</button>
-                <!-- Settings Button -->
-                <button id="settingsBtn" class="auth-btn settings-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0-.33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1.51-1V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                    </svg>
-                </button>
-            </div>
+            <!-- User ID/Email moved to side drawer -->
         </header>
+
+        <!-- Side Navigation Drawer (NEW) -->
+        <div id="sideDrawer" class="side-drawer" role="dialog" aria-modal="true" aria-labelledby="drawerUserIdDisplay">
+            <div class="drawer-header">
+                <h3 id="drawerUserIdDisplay">User: Not Signed In</h3>
+                <button id="closeDrawerBtn" class="close-drawer-btn" aria-label="Close settings menu">&times;</button>
+            </div>
+            <div class="drawer-content">
+                <div class="settings-section">
+                    <h3>App Theme</h3>
+                    <div class="theme-options">
+                        <button id="darkThemeBtn" class="theme-btn dark-theme-option">
+                            <span class="theme-icon">🌙</span> Dark
+                        </button>
+                        <button id="lightThemeBtn" class="theme-btn light-theme-option">
+                            <span class="theme-icon">☀️</span> Light
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Font Size</h3>
+                    <div class="font-size-options">
+                        <button id="fontSizeSmall" class="font-size-btn" data-size="small">Small</button>
+                        <button id="fontSizeMedium" class="font-size-btn" data-size="medium">Medium</button>
+                        <button id="fontSizeLarge" class="font-size-btn" data-size="large">Large</button>
+                    </div>
+                </div>
+                
+                <!-- Sign Out button (Moved here) -->
+                <div class="settings-section">
+                    <h3>Account</h3>
+                    <button id="signOutBtn" class="auth-btn signout-btn full-width-btn">Sign Out</button>
+                </div>
+
+                <!-- About Section (NOW A CLICKABLE ITEM TO OPEN A MODAL) -->
+                <div id="aboutAppButton" class="settings-section clickable-setting">
+                    <h3>About This App</h3>
+                    <p class="about-summary">Get information about the app and its policies.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Drawer Overlay (NEW) -->
+        <div id="drawerOverlay" class="drawer-overlay"></div>
+
 
         <!-- Authentication section - displayed when not logged in -->
         <div id="authSection" class="auth-section">
             <h2>Sign In / Sign Up</h2>
-            <button id="signInGoogleBtn" class="auth-btn google-btn">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon" class="google-icon">
-                Sign in with Google
-            </button>
-            <div class="or-separator">OR</div>
             <div class="email-password-form">
                 <input type="email" id="emailInput" placeholder="Email" autocomplete="email">
                 <input type="password" id="passwordInput" placeholder="Password" autocomplete="current-password">
                 <button id="signInEmailBtn" class="auth-btn email-btn">Sign In with Email</button>
                 <button id="signUpEmailBtn" class="auth-btn email-btn secondary-email-btn">Sign Up with Email</button>
+                <button id="forgotPasswordLink" class="forgot-password-link">Forgot Password?</button>
             </div>
             <div id="authStatusMessage" class="status-message"></div>
         </div>
@@ -187,8 +224,23 @@
                 <div id="uploadStatus"></div>
             </div>
 
+            <!-- Add New Record Section -->
+            <div id="addRecordSection" class="add-record-section">
+                <h2>Add New Record</h2>
+                <div class="add-record-form">
+                    <input type="text" id="addName" placeholder="Name">
+                    <input type="number" id="addAmount" placeholder="Amount" step="0.01">
+                    <select id="addStatus">
+                        <option value="no">Pending</option>
+                        <option value="yes">Paid</option>
+                    </select>
+                    <button id="addRecordBtn">Add Record</button>
+                </div>
+            </div>
+
             <div class="search-section">
-                <h2>Search Records</h2>
+                <h2>Search Records for Editing</h2>
+                <p class="search-hint">Type a name to search. Click on a search result to edit.</p>
                 <div class="search-container">
                     <input type="text" id="searchInput" placeholder="Type name to search..." />
                     <!-- Search results will be displayed here -->
@@ -199,12 +251,19 @@
             <div class="records-section">
                 <div class="section-header">
                     <h2>All Records</h2>
+                    <!-- Filter Buttons -->
+                    <div class="filter-buttons">
+                        <button id="filterAllBtn" class="filter-btn active">All</button>
+                        <button id="filterPaidBtn" class="filter-btn">Paid</button>
+                        <button id="filterPendingBtn" class="filter-btn">Pending</button>
+                    </div>
                     <!-- Display total number of records -->
                     <div class="records-count" id="recordsCount">0 records</div>
                 </div>
                 <!-- All records will be listed here -->
                 <div id="recordsList"></div>
                 <div class="clear-data-section">
+                    <button id="downloadCsvBtn" class="download-btn">Download All Records (CSV)</button>
                     <button id="clearAllDataBtn" class="clear-data-btn">Clear All My Data</button>
                 </div>
             </div>
@@ -212,9 +271,9 @@
     </div>
 
     <!-- Custom Modal for Alerts/Confirmations (replaces alert/confirm) -->
-    <div id="customModal" class="modal">
+    <div id="customModal" class="modal" role="dialog" aria-modal="true">
         <div class="modal-content">
-            <span class="close-button">&times;</span>
+            <span class="close-button" aria-label="Close dialog">&times;</span>
             <p id="modalMessage"></p>
             <div class="modal-buttons">
                 <button id="modalConfirmBtn" class="modal-btn confirm-btn" style="display:none;">Confirm</button>
@@ -223,19 +282,59 @@
             </div>
         </div>
     </div>
-
-    <!-- Theme Settings Modal - Added inline style to ensure it's hidden initially -->
-    <div id="themeModal" class="modal" style="display:none;">
+    
+    <!-- Edit Record Modal -->
+    <div id="editModal" class="modal" style="display:none;" role="dialog" aria-modal="true">
         <div class="modal-content">
-            <span class="close-button" id="closeThemeModalBtn">&times;</span>
-            <h2>Choose Theme</h2>
-            <div class="theme-options">
-                <button id="darkThemeBtn" class="theme-btn dark-theme-option">
-                    <span class="theme-icon">🌙</span> Dark
-                </button>
-                <button id="lightThemeBtn" class="theme-btn light-theme-option">
-                    <span class="theme-icon">☀️</span> Light
-                </button>
+            <span class="close-button" id="closeEditModalBtn" aria-label="Close edit record dialog">&times;</span>
+            <h2>Edit Record</h2>
+            <div class="edit-form-fields">
+                <input type="hidden" id="editRecordId">
+                <label for="editName">Name:</label>
+                <input type="text" id="editName" placeholder="Enter Name">
+
+                <label for="editAmount">Original Loan Amount:</label>
+                <input type="number" id="editAmount" placeholder="Original Amount" step="0.01" readonly> <!-- Readonly as it's original loan -->
+
+                <label for="editPaidAmount">Amount Paid Back:</label>
+                <input type="number" id="editPaidAmount" placeholder="Amount Paid Back" step="0.01">
+
+                <label for="editPaidStatus">Status:</label>
+                <select id="editPaidStatus">
+                    <option value="no">Pending</option>
+                    <option value="yes">Paid</option>
+                </select>
+            </div>
+            <div class="modal-buttons">
+                <button id="saveEditBtn" class="modal-btn confirm-btn">Save Changes</button>
+                <button id="cancelEditBtn" class="modal-btn cancel-btn">Cancel</button>
+                <button id="deleteRecordBtn" class="modal-btn delete-btn">Delete Record</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: About App Modal -->
+    <div id="aboutModal" class="modal" style="display:none;" role="dialog" aria-modal="true">
+        <div class="modal-content">
+            <span class="close-button" id="closeAboutModalBtn" aria-label="Close about dialog">&times;</span>
+            <h2>About Money Lending Manager</h2>
+            <p id="aboutAppDescription"></p>
+            <p class="app-version">Version: <span id="aboutAppVersion"></span></p> <!-- Version span moved here -->
+
+            <div class="about-policies">
+                <h3>Policies</h3>
+                <div class="policy-section">
+                    <h4>Terms of Service</h4>
+                    <p id="termsOfServiceContent"></p>
+                </div>
+                <div class="policy-section">
+                    <h4>Privacy Policy</h4>
+                    <p id="privacyPolicyContent"></p>
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button id="aboutOkBtn" class="modal-btn ok-btn">OK</button>
             </div>
         </div>
     </div>
